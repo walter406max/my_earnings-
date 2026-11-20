@@ -1,67 +1,634 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#123b32"><meta name="description" content="Personal work attendance, earnings and savings tracker">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Earnings</title>
+<meta name="description" content="Track workdays, wages, payments and savings. Works fully offline.">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#fff6f9" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1b0b14" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Earnings">
+<meta name="format-detection" content="telephone=no">
 <link rel="manifest" href="manifest.webmanifest">
-<title>My Earnings Tracker</title>
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <style>
-:root{font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:#17231f;background:#f3f6f4;--green:#176b4b;--line:#dce5df;--muted:#64736b}
-*{box-sizing:border-box}body{margin:0;padding:16px 14px 40px;max-width:720px;margin:auto}.top{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:8px 0 18px}.muted{color:var(--muted);font-size:13px}.card{background:white;border:1px solid var(--line);border-radius:16px;padding:16px;margin:12px 0;box-shadow:0 2px 8px #10251a08}.hero{background:#e3f2e9;border-color:#c5e2d0}.big{font-size:34px;font-weight:800;letter-spacing:-1px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.metric{font-size:25px;font-weight:750;margin-top:5px}.bar{height:9px;background:#d9e4dc;border-radius:20px;overflow:hidden;margin-top:12px}.bar span{display:block;height:100%;background:var(--green)}button,input{font:inherit}button{border:0;border-radius:10px;padding:11px 13px;font-weight:650;background:#e9efeb;color:#193b2c}button:disabled{opacity:.35}.primary{background:var(--green);color:white}.worked{background:#18794e;color:white}.missed{background:#b74c4c;color:white}.row{display:flex;gap:8px;align-items:center}.row>*{flex:1}.calendar{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}.calendar button{padding:8px 2px;min-height:48px;border:1px solid var(--line);font-size:13px}.calendar small{display:block;font-size:9px}.calendar .selected{outline:2px solid #16734d}.calendar .empty{visibility:hidden}input{width:100%;padding:11px;border:1px solid var(--line);border-radius:9px;background:#fff}table{width:100%;border-collapse:collapse;font-size:12px}td,th{text-align:left;padding:10px 4px;border-bottom:1px solid var(--line)}.scroll{overflow-x:auto}.tabs{display:flex;gap:8px}.tabs button{flex:1}.note{font-size:12px;color:var(--muted);line-height:1.5}h2{font-size:17px;margin:0 0 12px}h1{font-size:21px;margin:0}#install{display:none}.green{color:var(--green);font-weight:700}
+:root{
+  --bg:#fff6f9; --surface:#ffffff; --ink:#3b1428; --muted:#82637a;
+  --berry:#b3205a; --on-berry:#ffffff; --tint:#fce4ee; --tint-2:#f4d3e1;
+  --line:#f3d6e2; --plum:#6b2a4a; --on-plum:#ffffff; --bar:rgba(255,246,249,.88);
+  --shadow:0 1px 2px rgba(107,42,74,.06);
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","Helvetica Neue",system-ui,"Segoe UI",Roboto,sans-serif;
+  font-family:var(--font);
+}
+@media (prefers-color-scheme:dark){
+  :root{--bg:#1b0b14; --surface:#2a1220; --ink:#fbe9f1; --muted:#c79bb1;
+    --berry:#ff7db0; --on-berry:#2a0716; --tint:#3d1a2d; --tint-2:#4d2239;
+    --line:#43202f; --plum:#8a3f63; --on-plum:#ffffff; --bar:rgba(27,11,20,.88); --shadow:none}
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{-webkit-text-size-adjust:100%;background:var(--bg)}
+body{margin:0;background:var(--bg);color:var(--ink);font-size:17px;line-height:1.35;
+  -webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums;touch-action:manipulation}
+[hidden]{display:none!important}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer}
+h1,h2,h3,p{margin:0}
+a{color:inherit;text-decoration:none}
+:focus-visible{outline:3px solid var(--berry);outline-offset:2px;border-radius:10px}
+
+main{max-width:560px;margin:0 auto;outline:none;
+  padding:calc(env(safe-area-inset-top) + 22px) 20px calc(104px + env(safe-area-inset-bottom))}
+.page{display:none}
+.page.active{display:block;animation:fade .2s ease}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+
+.head{margin-bottom:22px}
+.head h1{font-size:34px;line-height:1.1;font-weight:700;letter-spacing:-.022em;outline:none}
+.sub{color:var(--muted);font-size:15px}
+.label{color:var(--muted);font-size:15px}
+h2{font-size:13px;font-weight:600;color:var(--muted);margin:26px 0 8px 16px;letter-spacing:0}
+
+/* Hero */
+.hero{margin:6px 0 26px}
+.big{font-size:60px;line-height:1;font-weight:700;letter-spacing:-.035em;margin:6px 0 16px}
+.bar{height:6px;border-radius:6px;background:var(--tint-2);overflow:hidden}
+.bar>span{display:block;height:100%;width:0;background:var(--berry);border-radius:6px;transition:width .5s cubic-bezier(.2,.8,.2,1)}
+.hero .sub{margin-top:10px}
+
+/* Surfaces */
+.card{background:var(--surface);border-radius:22px;padding:20px;box-shadow:var(--shadow)}
+.card+.card,.card+.group,.group+.group,.group+.card{margin-top:14px}
+.group{background:var(--surface);border-radius:20px;overflow:hidden;box-shadow:var(--shadow)}
+.row{display:flex;align-items:center;gap:12px;min-height:54px;padding:8px 16px;width:100%;
+  background:none;border:0;text-align:left;font-size:17px}
+.group>.row+.row,.group>*+*{border-top:1px solid var(--line)}
+.row .grow{flex:1;min-width:0}
+.row .val{color:var(--muted)}
+.row .chev{width:8px;height:14px;flex:none;color:var(--muted);opacity:.7}
+a.row:active,button.row:active{background:var(--tint)}
+.row small{display:block;color:var(--muted);font-size:14px}
+.row.accent .grow{color:var(--berry);font-weight:600}
+.row.danger{color:#b3261e;justify-content:center;font-weight:600}
+@media (prefers-color-scheme:dark){.row.danger{color:#ff9a95}}
+
+/* Buttons */
+.btn{min-height:50px;border-radius:14px;border:0;padding:0 18px;font-weight:600;font-size:17px;
+  background:var(--tint);color:var(--ink);transition:transform .12s ease,background .15s}
+.btn:active{transform:scale(.97)}
+.btn.primary{background:var(--berry);color:var(--on-berry)}
+.btn.quiet{background:none;color:var(--berry);min-height:44px}
+.btn:disabled{opacity:.4;cursor:default}
+.btn.small{min-height:44px;padding:0 14px;font-size:15px}
+
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
+.seg .btn{min-height:68px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.seg .btn small{font-size:13px;font-weight:500;opacity:.75}
+.seg .btn[aria-pressed="true"].w{background:var(--berry);color:var(--on-berry)}
+.seg .btn[aria-pressed="true"].m{background:var(--plum);color:var(--on-plum)}
+.card h3{font-size:20px;font-weight:650;letter-spacing:-.01em}
+.card .note{margin-top:12px;min-height:20px}
+
+/* Calendar */
+.monthbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.monthbar strong{font-size:20px;font-weight:650}
+.icon-btn{width:44px;height:44px;border-radius:50%;border:0;background:var(--tint);display:grid;place-items:center;color:var(--berry)}
+.icon-btn:disabled{opacity:.3}
+.icon-btn svg{width:10px;height:16px}
+.dow,.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.dow{margin-top:14px;color:var(--muted);font-size:13px;text-align:center}
+.cal{margin-top:6px}
+.day{aspect-ratio:1;min-height:44px;border:0;border-radius:50%;background:none;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;padding:0;line-height:1;font-size:17px;position:relative}
+.day b{font-weight:500}
+.day i{font-style:normal;font-size:10px;height:11px;margin-top:2px;font-weight:700}
+.day.worked{background:var(--berry);color:var(--on-berry)}
+.day.missed{background:var(--tint-2);color:var(--plum)}
+@media (prefers-color-scheme:dark){.day.missed{color:var(--ink)}}
+.day.today{box-shadow:0 0 0 2px var(--surface),0 0 0 4px var(--berry)}
+.day.out{opacity:.25}
+.day:not(:disabled):active{transform:scale(.92)}
+.legend{display:flex;gap:18px;flex-wrap:wrap;margin-top:16px;color:var(--muted);font-size:14px}
+.legend span{display:inline-flex;align-items:center;gap:7px}
+.legend i{width:12px;height:12px;border-radius:50%;display:inline-block}
+.legend .lw{background:var(--berry)}.legend .lm{background:var(--tint-2);box-shadow:inset 0 0 0 1px var(--muted)}.legend .lt{box-shadow:0 0 0 2px var(--surface),0 0 0 3.5px var(--berry)}
+
+/* Payments */
+.pay .grow b{font-weight:600}
+.pay .amt{font-weight:650;min-width:56px;text-align:right}
+.chip{font-size:14px;font-weight:600;color:var(--berry);background:var(--tint);border-radius:20px;padding:6px 12px;white-space:nowrap}
+.wait{color:var(--muted);font-size:14px;white-space:nowrap}
+.summary{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.summary p:last-child{font-size:28px;font-weight:700;letter-spacing:-.02em;margin-top:4px}
+
+/* Savings */
+.ringwrap{display:flex;align-items:center;gap:22px}
+.ring{width:132px;height:132px;flex:none}
+.ring circle{fill:none;stroke-width:10}
+.ring .track{stroke:var(--tint-2)}
+.ring .fill{stroke:var(--berry);stroke-linecap:round;transform:rotate(-90deg);transform-origin:60px 60px;transition:stroke-dashoffset .6s cubic-bezier(.2,.8,.2,1)}
+.ring text{font-size:22px;font-weight:700;fill:var(--ink);text-anchor:middle;dominant-baseline:central}
+.ringwrap .amt{font-size:32px;font-weight:700;letter-spacing:-.025em}
+.field{display:flex;gap:10px;margin-top:6px}
+.field input{flex:1;min-width:0;height:50px;border-radius:14px;border:1.5px solid var(--line);background:var(--bg);padding:0 14px;font-size:17px}
+.field input:focus{outline:none;border-color:var(--berry)}
+.twin{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.err{color:#b3261e;font-size:14px;min-height:20px;margin-top:8px}
+@media (prefers-color-scheme:dark){.err{color:#ff9a95}}
+.del{width:44px;height:44px;border:0;background:none;color:var(--muted);border-radius:50%;font-size:22px;line-height:1}
+.empty{padding:28px 20px;text-align:center;color:var(--muted)}
+
+/* Tab bar */
+nav{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--bar);
+  -webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);
+  border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
+nav ul{list-style:none;margin:0 auto;padding:0;max-width:560px;display:flex}
+nav li{flex:1}
+nav a{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;height:56px;
+  color:var(--muted);font-size:11px;font-weight:600}
+nav svg{width:25px;height:25px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+nav a[aria-current="page"]{color:var(--berry)}
+nav a[aria-current="page"] svg{stroke-width:2.1}
+
+/* Sheet */
+.sheet{position:fixed;inset:0;z-index:40;visibility:hidden;transition:visibility 0s linear .25s}
+.sheet.open{visibility:visible;transition-delay:0s}
+.scrim{position:absolute;inset:0;background:rgba(59,20,40,.38);opacity:0;transition:opacity .25s}
+.sheet.open .scrim{opacity:1}
+.panel{position:absolute;left:0;right:0;bottom:0;margin:0 auto;max-width:560px;background:var(--surface);
+  border-radius:26px 26px 0 0;padding:10px 20px calc(20px + env(safe-area-inset-bottom));
+  transform:translateY(100%);transition:transform .28s cubic-bezier(.2,.8,.2,1)}
+.sheet.open .panel{transform:none}
+.grab{width:38px;height:5px;border-radius:5px;background:var(--tint-2);margin:0 auto 16px}
+.panel h3{font-size:22px;font-weight:700;letter-spacing:-.015em}
+.panel .seg{margin-top:18px}
+.panel .btn.quiet{width:100%;margin-top:6px}
+.card .btn.quiet{padding-left:0;margin-top:4px}
+
+/* Toast */
+#toast{position:fixed;left:50%;bottom:calc(76px + env(safe-area-inset-bottom));z-index:60;transform:translate(-50%,12px);
+  background:var(--ink);color:var(--bg);padding:12px 18px;border-radius:30px;font-size:15px;font-weight:600;max-width:calc(100% - 40px);
+  opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;text-align:center}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition-duration:.01ms!important}
+}
+@media (min-width:700px){.big{font-size:68px}}
 </style>
 </head>
 <body>
-<header class="top"><div><div class="muted">PERSONAL FINANCE</div><h1>My Earnings Tracker</h1><div class="muted">Gain Cash & Carry · 2026–2027</div></div><button id="install">Install app</button></header>
-<section class="card hero"><div class="muted">Maximum possible earnings · through 21 February 2027</div><div class="big" id="maximum">$485.00</div><div class="muted">97 days × $5, assuming every day is worked</div><div class="bar"><span id="progress" style="width:0%"></span></div><div class="muted" id="progressText">0% of maximum earnings recorded</div></section>
-<section class="grid">
-<div class="card"><div class="muted">Earned</div><div class="metric" id="earned">$0</div><div class="muted">Confirmed workdays</div></div>
-<div class="card"><div class="muted">Missed days</div><div class="metric" id="missed">0</div><div class="muted">$5 not earned per day</div></div>
-<div class="card"><div class="muted">Received</div><div class="metric" id="received">$0</div><div class="muted">Payments marked received</div></div>
-<div class="card"><div class="muted">Still owed</div><div class="metric" id="owed">$0</div><div class="muted">Earned but not yet paid</div></div>
-</section>
-<section class="card"><h2>Daily attendance</h2><div class="muted" style="margin-bottom:12px">Tap a date, then record whether you worked.</div><div class="row"><button id="prev">← Previous</button><strong id="month" style="text-align:center"></strong><button id="next">Next →</button></div><div class="calendar" style="margin-top:12px" id="calendar"></div><p class="muted" id="selectedLabel">Select a date</p><div class="row"><button class="worked" id="yes">✓ Worked · $5</button><button class="missed" id="no">✕ Missed · $0</button></div><button id="clear" style="width:100%;margin-top:8px">Clear date</button></section>
-<section class="card"><h2>Weekly payment schedule</h2><p class="note">Payment dates assume you are paid one day after each completed seven-day period. Only mark a payment received after the money reaches you.</p><div class="scroll"><table><thead><tr><th>Payment date</th><th>Work period</th><th>Amount</th><th>Status</th></tr></thead><tbody id="payments"></tbody></table></div></section>
-<section class="card"><h2>US$150 business savings goal</h2><div class="row"><strong id="saved">$0 / $150</strong><span class="muted" id="remaining" style="text-align:right">$150 remaining</span></div><div class="bar"><span id="savebar" style="width:0%"></span></div><div class="row" style="margin-top:12px"><input id="saveamount" type="number" min="0" step=".01" placeholder="Amount saved"><button class="primary" id="addsave">Add</button></div></section>
-<section class="card"><h2>Backup your records</h2><div class="row"><button id="export">Export attendance CSV</button><button id="backup">Download backup</button></div><p class="note">Records are saved on this phone in this browser. Export a backup regularly. Clearing browser data may erase your records.</p><button id="reset" style="color:#a33">Reset all records</button></section>
-<p class="note" style="text-align:center">Daily wage: US$5 · Start date: 17 November 2026 · End date: 21 February 2027</p>
+
+<main id="main" tabindex="-1">
+
+  <!-- TODAY -->
+  <section class="page" id="page-home" data-title="Earnings">
+    <header class="head"><h1 tabindex="-1">Earnings</h1><p class="sub">Gain Cash &amp; Carry</p></header>
+    <div class="hero">
+      <p class="label">Earned so far</p>
+      <p class="big" id="hEarned">$0</p>
+      <div class="bar" role="progressbar" aria-label="Share of maximum earnings" aria-valuemin="0" aria-valuemax="100" id="hBarWrap"><span id="hBar"></span></div>
+      <p class="sub" id="hSub"></p>
+    </div>
+
+    <section class="card" aria-labelledby="todayH">
+      <h3 id="todayH">Today</h3>
+      <p class="sub" id="todayDate"></p>
+      <div class="seg" id="todaySeg">
+        <button class="btn w" data-act="today" data-status="worked" aria-pressed="false">Worked<small>+$5</small></button>
+        <button class="btn m" data-act="today" data-status="missed" aria-pressed="false">Missed<small>$0</small></button>
+      </div>
+      <p class="sub note" id="todayNote"></p>
+      <button class="btn quiet" data-act="todayClear" id="todayClear" hidden>Undo today</button>
+    </section>
+
+    <div class="group" id="homeNotices" style="margin-top:14px" hidden></div>
+
+    <h2>Summary</h2>
+    <div class="group" id="homeSummary"></div>
+  </section>
+
+  <!-- DAYS -->
+  <section class="page" id="page-days" data-title="Days">
+    <header class="head"><h1 tabindex="-1">Days</h1><p class="sub">Tap a date to record it.</p></header>
+    <section class="card">
+      <div class="monthbar">
+        <button class="icon-btn" data-act="prevMonth" id="prevM" aria-label="Previous month"><svg viewBox="0 0 10 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 1.5 2 8l6 6.5"/></svg></button>
+        <strong id="monthLabel" aria-live="polite"></strong>
+        <button class="icon-btn" data-act="nextMonth" id="nextM" aria-label="Next month"><svg viewBox="0 0 10 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 1.5 6 6.5-6 6.5"/></svg></button>
+      </div>
+      <div class="dow" aria-hidden="true"><span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span></div>
+      <div class="cal" id="cal"></div>
+      <div class="legend" aria-hidden="true"><span><i class="lw"></i>Worked</span><span><i class="lm"></i>Missed</span><span><i class="lt"></i>Today</span></div>
+    </section>
+    <p class="sub" id="monthStats" style="margin:16px 16px 0"></p>
+  </section>
+
+  <!-- PAYMENTS -->
+  <section class="page" id="page-pay" data-title="Payments">
+    <header class="head"><h1 tabindex="-1">Payments</h1><p class="sub">Paid the day after each 7-day period.</p></header>
+    <div class="card summary">
+      <div><p class="label">Received</p><p id="pReceived">$0</p></div>
+      <div><p class="label">Still owed</p><p id="pOwed">$0</p></div>
+    </div>
+    <h2>Weekly pay</h2>
+    <div class="group pay" id="payList"></div>
+    <p class="sub" style="margin:12px 16px 0">Mark a payment only after the money reaches you. Confirm the pay arrangement with your employer.</p>
+  </section>
+
+  <!-- SAVINGS -->
+  <section class="page" id="page-save" data-title="Savings">
+    <header class="head"><h1 tabindex="-1">Savings</h1><p class="sub">Business goal: $150</p></header>
+    <section class="card">
+      <div class="ringwrap">
+        <svg class="ring" viewBox="0 0 120 120" role="img" id="ringSvg" aria-label="0% of goal saved">
+          <circle class="track" cx="60" cy="60" r="52"/>
+          <circle class="fill" id="ringFill" cx="60" cy="60" r="52" stroke-dasharray="326.73" stroke-dashoffset="326.73"/>
+          <text x="60" y="60" id="ringText">0%</text>
+        </svg>
+        <div><p class="amt" id="sAmt">$0</p><p class="sub" id="sLeft">$150 to go</p></div>
+      </div>
+      <div class="field" style="margin-top:20px"><input id="sInput" inputmode="decimal" autocomplete="off" placeholder="Amount" aria-label="Amount in dollars"></div>
+      <div class="twin"><button class="btn primary" data-act="saveAdd">Add</button><button class="btn" data-act="saveTake">Take out</button></div>
+      <p class="err" id="sErr" role="alert"></p>
+    </section>
+    <h2>History</h2>
+    <div class="group" id="saveList"></div>
+  </section>
+
+  <!-- MORE -->
+  <section class="page" id="page-more" data-title="More">
+    <header class="head"><h1 tabindex="-1">More</h1><p class="sub">Backup, install and settings.</p></header>
+
+    <h2>App</h2>
+    <div class="group">
+      <div class="row"><span class="grow">Saved on this device<small id="mSave">Every change saves instantly.</small></span></div>
+      <div class="row"><span class="grow">Offline<small id="mOffline">Checking…</small></span></div>
+      <div class="row" id="installRow"><span class="grow">Install<small id="mInstall"></small></span><button class="btn small primary" id="installBtn" data-act="install" hidden>Install</button></div>
+    </div>
+
+    <h2>Backup</h2>
+    <div class="group">
+      <button class="row" data-act="backup"><span class="grow">Download backup</span><span class="val">JSON</span></button>
+      <label class="row" for="restoreFile" style="cursor:pointer"><span class="grow">Restore from backup</span><span class="val">Choose file</span></label>
+      <button class="row" data-act="csv"><span class="grow">Export attendance</span><span class="val">CSV</span></button>
+    </div>
+    <input type="file" id="restoreFile" accept=".json,application/json" hidden>
+    <p class="sub" style="margin:10px 16px 0">Data stays in this browser. Clearing site data or deleting the app can erase it, so download a backup now and then.</p>
+
+    <h2>Details</h2>
+    <div class="group">
+      <div class="row"><span class="grow">Daily wage</span><span class="val">$5</span></div>
+      <div class="row"><span class="grow">Start</span><span class="val">17 Nov 2026</span></div>
+      <div class="row"><span class="grow">End</span><span class="val">21 Feb 2027</span></div>
+    </div>
+
+    <div class="group" style="margin-top:26px"><button class="row danger" data-act="reset">Erase all records</button></div>
+  </section>
+</main>
+
+<nav aria-label="Main">
+  <ul>
+    <li><a href="#/home" data-route="home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11 12 4l8 7v8.5a.5.5 0 0 1-.5.5H15v-6H9v6H4.5a.5.5 0 0 1-.5-.5z"/></svg>Today</a></li>
+    <li><a href="#/days" data-route="days"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5.5" width="16" height="14.5" rx="3"/><path d="M4 10h16M8.5 3.5v3.5M15.5 3.5v3.5"/></svg>Days</a></li>
+    <li><a href="#/pay" data-route="pay"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6.5" width="18" height="11" rx="3"/><circle cx="12" cy="12" r="2.6"/></svg>Payments</a></li>
+    <li><a href="#/save" data-route="save"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5v9M14.6 9.6c-.5-.8-1.4-1.2-2.6-1.2-1.5 0-2.5.7-2.5 1.8 0 2.6 5.2 1.2 5.2 3.8 0 1.1-1.1 1.8-2.7 1.8-1.2 0-2.2-.5-2.7-1.3"/></svg>Savings</a></li>
+    <li><a href="#/more" data-route="more"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="18" cy="12" r="1.3"/></svg>More</a></li>
+  </ul>
+</nav>
+
+<div class="sheet" id="sheet" inert>
+  <div class="scrim" data-act="closeSheet"></div>
+  <div class="panel" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+    <div class="grab"></div>
+    <h3 id="sheetTitle"></h3>
+    <p class="sub" id="sheetSub"></p>
+    <div class="seg">
+      <button class="btn w" data-act="sheetMark" data-status="worked" aria-pressed="false">Worked<small>+$5</small></button>
+      <button class="btn m" data-act="sheetMark" data-status="missed" aria-pressed="false">Missed<small>$0</small></button>
+    </div>
+    <button class="btn quiet" data-act="sheetClear" id="sheetClear">Clear record</button>
+    <button class="btn quiet" data-act="closeSheet" style="color:var(--muted)">Cancel</button>
+  </div>
+</div>
+
+<div id="toast" role="status" aria-live="polite"></div>
+<noscript><p style="padding:24px">Earnings needs JavaScript turned on.</p></noscript>
+
 <script>
 (()=>{
-const $=id=>document.getElementById(id),start=new Date(2026,10,17),end=new Date(2027,1,21),today=new Date();today.setHours(0,0,0,0);
-const store='gcc-earnings-pwa-v1';let state={attendance:{},payments:{},savings:0},view=new Date(2026,10,1),selected=new Date(2026,10,20);
-try{state={...state,...JSON.parse(localStorage.getItem(store)||'{}')}}catch(e){}
-const key=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-const label=d=>d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
-const days=[];for(let d=new Date(start);d<=end;d.setDate(d.getDate()+1))days.push(new Date(d));
-const persist=()=>localStorage.setItem(store,JSON.stringify(state));
-function render(){
-let worked=days.filter(d=>state.attendance[key(d)]==='worked').length,missed=days.filter(d=>state.attendance[key(d)]==='missed').length,earned=worked*5,paid=0,rows=[];
-for(let i=0;i<days.length;i+=7){let p=days.slice(i,i+7),due=new Date(p[p.length-1]);due.setDate(due.getDate()+1);let id=key(due),amount=p.filter(d=>state.attendance[key(d)]==='worked').length*5;if(state.payments[id])paid+=amount;rows.push({p,due,id,amount})}
-$('earned').textContent='$'+earned.toFixed(2);$('missed').textContent=missed;$('received').textContent='$'+paid.toFixed(2);$('owed').textContent='$'+Math.max(0,earned-paid).toFixed(2);
-$('progress').style.width=(earned/485*100)+'%';$('progressText').textContent=(earned/485*100).toFixed(1)+'% of maximum earnings recorded';
-$('payments').innerHTML=rows.map(r=>`<tr><td>${label(r.due)}</td><td>${label(r.p[0])}–${label(r.p.at(-1))}</td><td>$${r.amount.toFixed(2)}</td><td>${state.payments[r.id]?'✓ Received':`<button data-pay="${r.id}" ${r.due>today?'disabled':''}>Mark paid</button>`}</td></tr>`).join('');
-document.querySelectorAll('[data-pay]').forEach(b=>b.onclick=()=>{state.payments[b.dataset.pay]=true;persist();render()});
-$('saved').textContent='$'+Number(state.savings).toFixed(2)+' / $150';$('remaining').textContent='$'+Math.max(0,150-state.savings).toFixed(2)+' remaining';$('savebar').style.width=Math.min(100,state.savings/150*100)+'%';
-calendar();
+'use strict';
+
+/* ---------- Settings ---------- */
+const WAGE=5, GOAL=150;
+const START=new Date(2026,10,17), END=new Date(2027,1,21);
+const KEY='gcc-earnings-pwa-v1';           // same key as the earlier version, so existing records carry over
+const ROUTES={home:'Earnings',days:'Days',pay:'Payments',save:'Savings',more:'More'};
+
+/* ---------- Helpers ---------- */
+const $=id=>document.getElementById(id);
+const pad=n=>String(n).padStart(2,'0');
+const key=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const parse=k=>{const [y,m,d]=k.split('-').map(Number);return new Date(y,m-1,d)};
+const fmt=(d,o)=>d.toLocaleDateString('en-GB',o||{day:'numeric',month:'short'});
+const fmtLong=d=>fmt(d,{weekday:'long',day:'numeric',month:'long'});
+const round2=n=>Math.round(n*100)/100;
+const money=n=>'$'+(Number.isInteger(n)?n.toString():n.toFixed(2));
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const DATE_RE=/^\d{4}-\d{2}-\d{2}$/;
+const todayDate=()=>{const t=new Date();t.setHours(0,0,0,0);return t};
+const CHEV='<svg class="chev" viewBox="0 0 8 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m1.5 1.5 5.5 5.5-5.5 5.5"/></svg>';
+
+const DAYS=[];for(let d=new Date(START);d<=END;d.setDate(d.getDate()+1))DAYS.push(new Date(d));
+const MAX=DAYS.length*WAGE;
+
+/* ---------- Storage ---------- */
+const blank=()=>({v:2,attendance:{},payments:{},savings:[]});
+function normalize(raw){
+  const s=blank();
+  if(!raw||typeof raw!=='object')return s;
+  if(raw.attendance&&typeof raw.attendance==='object')
+    for(const [k,v] of Object.entries(raw.attendance))if(DATE_RE.test(k)&&(v==='worked'||v==='missed'))s.attendance[k]=v;
+  if(raw.payments&&typeof raw.payments==='object')
+    for(const [k,v] of Object.entries(raw.payments))if(DATE_RE.test(k)&&v)s.payments[k]=true;
+  if(Array.isArray(raw.savings)){
+    for(const e of raw.savings){
+      const a=Number(e&&e.amount);
+      if(e&&Number.isFinite(a)&&a!==0)s.savings.push({id:String(e.id||uid()),date:DATE_RE.test(e.date)?e.date:key(new Date()),amount:round2(a),note:e.note?String(e.note).slice(0,60):''});
+    }
+  }else if(Number(raw.savings)>0){
+    s.savings.push({id:uid(),date:key(new Date()),amount:round2(Number(raw.savings)),note:'Earlier savings'});
+  }
+  return s;
 }
-function calendar(){
-$('month').textContent=view.toLocaleDateString('en-US',{month:'long',year:'numeric'});let first=new Date(view.getFullYear(),view.getMonth(),1),offset=first.getDay(),last=new Date(view.getFullYear(),view.getMonth()+1,0).getDate(),html='';
-for(let i=0;i<offset;i++)html+='<button class="empty" disabled></button>';
-for(let n=1;n<=last;n++){let d=new Date(view.getFullYear(),view.getMonth(),n),k=key(d),s=state.attendance[k],inside=d>=start&&d<=end,cls=s==='worked'?'worked':s==='missed'?'missed':'';html+=`<button data-date="${k}" class="${cls} ${key(selected)===k?'selected':''}" ${inside?'':'disabled'}>${n}<small>${s==='worked'?'✓ $5':s==='missed'?'Missed':inside?'·':''}</small></button>`}
-$('calendar').innerHTML=html;document.querySelectorAll('[data-date]').forEach(b=>b.onclick=()=>{selected=new Date(b.dataset.date+'T12:00:00');calendar()});
-$('selectedLabel').textContent=label(selected)+' · '+(state.attendance[key(selected)]||'Not recorded');
+let state=blank(), needsMigrate=false;
+try{
+  const raw=localStorage.getItem(KEY);
+  if(raw){const parsed=JSON.parse(raw);state=normalize(parsed);needsMigrate=parsed.v!==2}
+}catch(e){}
+
+function persist(){
+  try{localStorage.setItem(KEY,JSON.stringify(state));setSaveNote(true);return true}
+  catch(e){setSaveNote(false);toast('Could not save. Download a backup from More.');return false}
 }
-$('prev').onclick=()=>{view.setMonth(view.getMonth()-1);calendar()};$('next').onclick=()=>{view.setMonth(view.getMonth()+1);calendar()};
-$('yes').onclick=()=>{if(selected<start||selected>end)return;state.attendance[key(selected)]='worked';persist();render()};
-$('no').onclick=()=>{if(selected<start||selected>end)return;state.attendance[key(selected)]='missed';persist();render()};
-$('clear').onclick=()=>{delete state.attendance[key(selected)];persist();render()};
-$('addsave').onclick=()=>{let n=Number($('saveamount').value);if(n>0&&Number.isFinite(n)){state.savings=Number(state.savings)+n;$('saveamount').value='';persist();render()}};
-$('reset').onclick=()=>{if(confirm('Permanently erase all attendance, payment and savings records on this phone?')){state={attendance:{},payments:{},savings:0};persist();render()}};
-$('export').onclick=()=>{let csv='Date,Attendance,Wages\\n'+days.map(d=>`${key(d)},${state.attendance[key(d)]||'Not recorded'},${state.attendance[key(d)]==='worked'?5:0}`).join('\\n');download(csv,'attendance.csv','text/csv')};
-$('backup').onclick=()=>download(JSON.stringify(state,null,2),'earnings-backup.json','application/json');
-function download(content,name,type){let a=document.createElement('a'),u=URL.createObjectURL(new Blob([content],{type}));a.href=u;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(u),1000)}
-render();
-let promptEvent;window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();promptEvent=e;$('install').style.display='block'});$('install').onclick=async()=>{if(promptEvent){promptEvent.prompt();await promptEvent.userChoice;promptEvent=null}else alert('In Chrome, open the menu ⋮ and choose Add to Home screen or Install app.')};
-if('serviceWorker'in navigator && location.protocol.startsWith('http'))navigator.serviceWorker.register('./sw.js').catch(()=>{});
+function setSaveNote(ok){
+  $('mSave').textContent=ok?'Every change saves instantly.':'Saving is blocked in this browser. Download a backup.';
+}
+if(needsMigrate)persist();
+if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(()=>{});
+window.addEventListener('storage',e=>{
+  if(e.key===KEY){try{state=normalize(JSON.parse(e.newValue||'{}'))}catch(_){state=blank()}renderAll()}
+});
+
+/* ---------- Derived numbers ---------- */
+function compute(){
+  const t=todayDate();let worked=0,missed=0,unrecorded=0;
+  for(const d of DAYS){
+    const s=state.attendance[key(d)];
+    if(s==='worked')worked++;else if(s==='missed')missed++;else if(d<t)unrecorded++;
+  }
+  const weeks=[];
+  for(let i=0;i<DAYS.length;i+=7){
+    const p=DAYS.slice(i,i+7),due=new Date(p[p.length-1]);due.setDate(due.getDate()+1);
+    const w=p.filter(d=>state.attendance[key(d)]==='worked').length,id=key(due);
+    weeks.push({p,due,id,worked:w,amount:w*WAGE,paid:!!state.payments[id]});
+  }
+  const earned=worked*WAGE,received=weeks.filter(w=>w.paid).reduce((a,w)=>a+w.amount,0);
+  const saved=Math.max(0,round2(state.savings.reduce((a,e)=>a+e.amount,0)));
+  return {t,worked,missed,unrecorded,weeks,earned,received,owed:Math.max(0,earned-received),saved};
+}
+
+/* ---------- Toast ---------- */
+let toastTimer;
+function toast(msg){
+  const el=$('toast');el.textContent=msg;el.classList.add('show');
+  clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('show'),2300);
+}
+
+/* ---------- Rendering ---------- */
+function setPressed(container,status){
+  container.querySelectorAll('[data-status]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.status===status)));
+}
+function linkRow(href,label,value,sub){
+  return `<a class="row" href="${href}"><span class="grow">${label}${sub?`<small>${sub}</small>`:''}</span><span class="val">${value||''}</span>${CHEV}</a>`;
+}
+function renderHome(c){
+  $('hEarned').textContent=money(c.earned);
+  const pct=c.earned/MAX*100;
+  $('hBar').style.width=pct+'%';$('hBarWrap').setAttribute('aria-valuenow',Math.round(pct));
+  $('hSub').textContent=`${c.worked} ${c.worked===1?'day':'days'} worked of ${DAYS.length}. Most you can earn is ${money(MAX)}.`;
+
+  const t=c.t,k=key(t),inRange=t>=START&&t<=END;
+  $('todayDate').textContent=fmtLong(t);
+  const seg=$('todaySeg');
+  if(inRange){
+    seg.hidden=false;const s=state.attendance[k];setPressed(seg,s);
+    $('todayClear').hidden=!s;
+    $('todayNote').textContent=s==='worked'?`Worked today. ${money(WAGE)} added.`:s==='missed'?'Marked as missed. Nothing added.':'Not recorded yet.';
+  }else{
+    seg.hidden=true;$('todayClear').hidden=true;
+    $('todayNote').textContent=t<START?`Tracking starts on ${fmt(START,{weekday:'long',day:'numeric',month:'long',year:'numeric'})}.`:`Tracking ended on ${fmt(END,{day:'numeric',month:'long',year:'numeric'})}. Your final totals are below.`;
+  }
+
+  let n='';
+  if(c.unrecorded>0)n+=linkRow('#/days',`${c.unrecorded} earlier ${c.unrecorded===1?'day has':'days have'} no record`,'','Fill them in so your total is right');
+  const ready=c.weeks.find(w=>!w.paid&&w.amount>0&&w.due<=t);
+  const next=c.weeks.find(w=>w.due>t&&!w.paid);
+  if(ready)n+=linkRow('#/pay',`${money(ready.amount)} is ready to confirm`,'',`Due ${fmt(ready.due,{weekday:'short',day:'numeric',month:'short'})}`);
+  else if(next)n+=linkRow('#/pay','Next payment',fmt(next.due,{weekday:'short',day:'numeric',month:'short'}),`${money(next.amount)} so far`);
+  const nt=$('homeNotices');nt.innerHTML=n;nt.hidden=!n;
+
+  $('homeSummary').innerHTML=
+    linkRow('#/days','Missed days',c.missed)+
+    linkRow('#/pay','Received',money(c.received))+
+    linkRow('#/pay','Still owed',money(c.owed))+
+    linkRow('#/save','Savings',`${money(c.saved)} of ${money(GOAL)}`);
+}
+
+let view=new Date(2026,10,1);
+(function initView(){
+  const t=todayDate(),base=t<START?START:t>END?END:t;view=new Date(base.getFullYear(),base.getMonth(),1);
+})();
+function renderDays(c){
+  const y=view.getFullYear(),m=view.getMonth(),offset=new Date(y,m,1).getDay(),last=new Date(y,m+1,0).getDate();
+  $('monthLabel').textContent=view.toLocaleDateString('en-GB',{month:'long',year:'numeric'});
+  let html='';for(let i=0;i<offset;i++)html+='<span></span>';
+  let w=0,mi=0;
+  for(let n=1;n<=last;n++){
+    const d=new Date(y,m,n),k=key(d),s=state.attendance[k],inside=d>=START&&d<=END;
+    if(s==='worked')w++;else if(s==='missed')mi++;
+    const cls='day'+(s?' '+s:'')+(k===key(c.t)?' today':'')+(inside?'':' out');
+    html+=`<button class="${cls}" data-act="open" data-date="${k}" aria-label="${fmtLong(d)}, ${s||'not recorded'}" ${inside?'':'disabled'}><b>${n}</b><i>${s==='worked'?'✓':s==='missed'?'✕':''}</i></button>`;
+  }
+  $('cal').innerHTML=html;
+  $('prevM').disabled=view<=new Date(START.getFullYear(),START.getMonth(),1);
+  $('nextM').disabled=view>=new Date(END.getFullYear(),END.getMonth(),1);
+  $('monthStats').textContent=`This month: ${w} worked, ${mi} missed, ${money(w*WAGE)} earned.`;
+}
+
+function renderPay(c){
+  $('pReceived').textContent=money(c.received);$('pOwed').textContent=money(c.owed);
+  $('payList').innerHTML=c.weeks.map(w=>{
+    const last=w.p[w.p.length-1];
+    let act;
+    if(w.paid)act=`<span class="chip">Received</span><button class="btn quiet small" data-act="unpay" data-id="${w.id}" aria-label="Undo received for ${fmt(w.due)}">Undo</button>`;
+    else if(w.amount===0)act='<span class="wait">Nothing due</span>';
+    else if(w.due>c.t){const dd=Math.round((w.due-c.t)/864e5);act=`<span class="wait">In ${dd} ${dd===1?'day':'days'}</span>`}
+    else act=`<button class="btn primary small" data-act="pay" data-id="${w.id}">Mark received</button>`;
+    return `<div class="row"><span class="grow"><b>${fmt(w.due,{weekday:'short',day:'numeric',month:'short'})}</b><small>${fmt(w.p[0])} – ${fmt(last)}</small></span><span class="amt">${money(w.amount)}</span>${act}</div>`;
+  }).join('');
+}
+
+function renderSave(c){
+  const pct=Math.min(1,c.saved/GOAL),C=2*Math.PI*52;
+  $('ringFill').style.strokeDasharray=C;$('ringFill').style.strokeDashoffset=C*(1-pct);
+  $('ringText').textContent=Math.round(pct*100)+'%';
+  $('ringSvg').setAttribute('aria-label',`${Math.round(pct*100)}% of goal saved`);
+  $('sAmt').textContent=money(c.saved);
+  $('sLeft').textContent=c.saved>=GOAL?'Goal reached':`${money(round2(GOAL-c.saved))} to go`;
+  const list=[...state.savings].reverse();
+  $('saveList').innerHTML=list.length?list.map(e=>`<div class="row"><span class="grow">${e.amount>0?'Added':'Taken out'}<small>${fmt(parse(e.date),{day:'numeric',month:'short',year:'numeric'})}${e.note?', '+esc(e.note):''}</small></span><span class="amt" style="font-weight:650">${e.amount>0?'+':'−'}${money(Math.abs(e.amount))}</span><button class="del" data-act="delSave" data-id="${esc(e.id)}" aria-label="Delete this entry">×</button></div>`).join(''):'<div class="empty">Nothing saved yet. Add what you set aside for your business.</div>';
+}
+
+const isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+const isStandalone=()=>window.matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
+let installEvent=null,offlineReady=false;
+function renderMore(){
+  const swOK='serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost');
+  $('mOffline').textContent=offlineReady?'Ready. The app works without internet.':swOK?'Preparing, open the app once with internet…':'Open the hosted HTTPS link to enable offline use.';
+  let msg='',btn=false;
+  if(isStandalone())msg='Installed on this device.';
+  else if(installEvent){msg='Add Earnings to your home screen.';btn=true}
+  else if(isIOS)msg='In Safari, tap Share, then Add to Home Screen.';
+  else msg='Open your browser menu and choose Install app or Add to Home Screen.';
+  $('mInstall').textContent=msg;$('installBtn').hidden=!btn;
+}
+
+function renderAll(){const c=compute();renderHome(c);renderDays(c);renderPay(c);renderSave(c);renderMore();if(sheetDate)renderSheet()}
+
+/* ---------- Sheet ---------- */
+let sheetDate=null,lastFocus=null;
+function renderSheet(){
+  const d=parse(sheetDate),s=state.attendance[sheetDate];
+  $('sheetTitle').textContent=fmtLong(d);
+  $('sheetSub').textContent=s==='worked'?`Worked. ${money(WAGE)} earned.`:s==='missed'?'Missed. Nothing earned.':'Not recorded yet.';
+  setPressed($('sheet'),s);$('sheetClear').hidden=!s;
+}
+function openSheet(k){
+  lastFocus=document.activeElement;sheetDate=k;$('toast').classList.remove('show');renderSheet();
+  const sh=$('sheet');sh.inert=false;requestAnimationFrame(()=>{sh.classList.add('open');sh.querySelector('.seg .btn').focus({preventScroll:true})});
+}
+function closeSheet(){
+  const sh=$('sheet');sh.classList.remove('open');sh.inert=true;sheetDate=null;
+  if(lastFocus&&lastFocus.focus)lastFocus.focus({preventScroll:true});
+}
+
+/* ---------- Actions ---------- */
+function setStatus(k,status){
+  const d=parse(k);if(d<START||d>END)return false;
+  if(status)state.attendance[k]=status;else delete state.attendance[k];
+  const ok=persist();renderAll();return ok;
+}
+function parseAmount(){
+  const raw=$('sInput').value.trim().replace(',','.');
+  if(!/^\d+(\.\d{1,2})?$/.test(raw)||Number(raw)<=0)return null;
+  return round2(Number(raw));
+}
+function saveEntry(sign){
+  const err=$('sErr');err.textContent='';
+  const a=parseAmount();
+  if(a===null){err.textContent='Enter an amount above 0, like 12 or 7.50.';$('sInput').focus();return}
+  const total=compute().saved;
+  if(sign<0&&a>total){err.textContent=`You only have ${money(total)} saved.`;return}
+  state.savings.push({id:uid(),date:key(new Date()),amount:sign*a,note:''});
+  $('sInput').value='';
+  if(persist()){toast(sign>0?`Added ${money(a)} to savings`:`Took out ${money(a)}`)}
+  renderAll();
+}
+function download(content,name,type){
+  const a=document.createElement('a'),u=URL.createObjectURL(new Blob([content],{type}));
+  a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1500);
+}
+const stamp=()=>key(new Date());
+
+document.addEventListener('click',e=>{
+  const el=e.target.closest('[data-act]');if(!el)return;
+  const act=el.dataset.act;
+  switch(act){
+    case 'today':{const k=key(todayDate()),s=el.dataset.status;if(setStatus(k,s))toast(s==='worked'?`Saved. ${money(WAGE)} added.`:'Saved as missed');break}
+    case 'todayClear':if(setStatus(key(todayDate()),null))toast('Today cleared');break;
+    case 'prevMonth':view=new Date(view.getFullYear(),view.getMonth()-1,1);renderDays(compute());break;
+    case 'nextMonth':view=new Date(view.getFullYear(),view.getMonth()+1,1);renderDays(compute());break;
+    case 'open':openSheet(el.dataset.date);break;
+    case 'closeSheet':closeSheet();break;
+    case 'sheetMark':{const k=sheetDate,s=el.dataset.status;closeSheet();if(setStatus(k,s))toast(`${fmt(parse(k))}: ${s==='worked'?'worked, '+money(WAGE)+' added':'missed'}`);break}
+    case 'sheetClear':{const k=sheetDate;closeSheet();if(setStatus(k,null))toast(`${fmt(parse(k))} cleared`);break}
+    case 'pay':state.payments[el.dataset.id]=true;if(persist())toast('Payment marked received');renderAll();break;
+    case 'unpay':delete state.payments[el.dataset.id];if(persist())toast('Payment set back to unpaid');renderAll();break;
+    case 'saveAdd':saveEntry(1);break;
+    case 'saveTake':saveEntry(-1);break;
+    case 'delSave':state.savings=state.savings.filter(x=>x.id!==el.dataset.id);if(persist())toast('Entry deleted');renderAll();break;
+    case 'backup':download(JSON.stringify(state,null,2),`earnings-backup-${stamp()}.json`,'application/json');toast('Backup downloaded');break;
+    case 'csv':{
+      const rows=['Date,Attendance,Wages'].concat(DAYS.map(d=>{const s=state.attendance[key(d)];return `${key(d)},${s||'Not recorded'},${s==='worked'?WAGE:0}`}));
+      download(rows.join('\n'),`attendance-${stamp()}.csv`,'text/csv');toast('Attendance exported');break}
+    case 'reset':
+      if(confirm('Erase all attendance, payment and savings records on this device? This cannot be undone.')){state=blank();if(persist())toast('All records erased');renderAll()}
+      break;
+    case 'install':
+      if(installEvent){installEvent.prompt();installEvent.userChoice.finally(()=>{installEvent=null;renderMore()})}
+      break;
+  }
+});
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'&&sheetDate)closeSheet();
+  if(e.key==='Enter'&&e.target.id==='sInput'){e.preventDefault();saveEntry(1)}
+  if(e.key==='Tab'&&sheetDate){ // keep focus inside the sheet
+    const f=[...$('sheet').querySelectorAll('button:not([hidden])')];if(!f.length)return;
+    const first=f[0],last=f[f.length-1];
+    if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus()}
+    else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus()}
+  }
+});
+$('sInput').addEventListener('input',()=>{$('sErr').textContent=''});
+$('restoreFile').addEventListener('change',async e=>{
+  const f=e.target.files[0];e.target.value='';if(!f)return;
+  try{
+    const data=normalize(JSON.parse(await f.text()));
+    const n=Object.keys(data.attendance).length;
+    if(!n&&!data.savings.length&&!Object.keys(data.payments).length){toast('That file has no records');return}
+    if(confirm(`Replace your current records with this backup (${n} recorded days)?`)){state=data;if(persist())toast('Backup restored');renderAll()}
+  }catch(_){toast('That file is not a valid backup')}
+});
+
+/* ---------- Install + offline ---------- */
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installEvent=e;renderMore()});
+window.addEventListener('appinstalled',()=>{installEvent=null;toast('Installed');renderMore()});
+if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost'||location.hostname==='127.0.0.1')){
+  navigator.serviceWorker.register('./sw.js',{updateViaCache:'none'}).catch(()=>{});
+  navigator.serviceWorker.ready.then(()=>{offlineReady=true;renderMore()});
+}
+
+/* ---------- Router ---------- */
+function route(){
+  const name=(location.hash.replace(/^#\/?/,'')||'home');
+  const r=ROUTES[name]?name:'home';
+  document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id==='page-'+r));
+  document.querySelectorAll('nav a').forEach(a=>{if(a.dataset.route===r)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')});
+  document.title=(r==='home'?'Earnings':ROUTES[r]+' · Earnings');
+  window.scrollTo(0,0);
+  if(sheetDate)closeSheet();
+}
+window.addEventListener('hashchange',()=>{route();const h=document.querySelector('.page.active h1');if(h)h.focus({preventScroll:true})});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')renderAll()});
+
+renderAll();route();
 })();
 </script>
-</body></html>
+</body>
+</html>
