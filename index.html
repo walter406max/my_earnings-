@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#123b32"><meta name="description" content="Personal work attendance, earnings and savings tracker">
+<link rel="manifest" href="manifest.webmanifest">
+<title>My Earnings Tracker</title>
+<style>
+:root{font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:#17231f;background:#f3f6f4;--green:#176b4b;--line:#dce5df;--muted:#64736b}
+*{box-sizing:border-box}body{margin:0;padding:16px 14px 40px;max-width:720px;margin:auto}.top{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:8px 0 18px}.muted{color:var(--muted);font-size:13px}.card{background:white;border:1px solid var(--line);border-radius:16px;padding:16px;margin:12px 0;box-shadow:0 2px 8px #10251a08}.hero{background:#e3f2e9;border-color:#c5e2d0}.big{font-size:34px;font-weight:800;letter-spacing:-1px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.metric{font-size:25px;font-weight:750;margin-top:5px}.bar{height:9px;background:#d9e4dc;border-radius:20px;overflow:hidden;margin-top:12px}.bar span{display:block;height:100%;background:var(--green)}button,input{font:inherit}button{border:0;border-radius:10px;padding:11px 13px;font-weight:650;background:#e9efeb;color:#193b2c}button:disabled{opacity:.35}.primary{background:var(--green);color:white}.worked{background:#18794e;color:white}.missed{background:#b74c4c;color:white}.row{display:flex;gap:8px;align-items:center}.row>*{flex:1}.calendar{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}.calendar button{padding:8px 2px;min-height:48px;border:1px solid var(--line);font-size:13px}.calendar small{display:block;font-size:9px}.calendar .selected{outline:2px solid #16734d}.calendar .empty{visibility:hidden}input{width:100%;padding:11px;border:1px solid var(--line);border-radius:9px;background:#fff}table{width:100%;border-collapse:collapse;font-size:12px}td,th{text-align:left;padding:10px 4px;border-bottom:1px solid var(--line)}.scroll{overflow-x:auto}.tabs{display:flex;gap:8px}.tabs button{flex:1}.note{font-size:12px;color:var(--muted);line-height:1.5}h2{font-size:17px;margin:0 0 12px}h1{font-size:21px;margin:0}#install{display:none}.green{color:var(--green);font-weight:700}
+</style>
+</head>
+<body>
+<header class="top"><div><div class="muted">PERSONAL FINANCE</div><h1>My Earnings Tracker</h1><div class="muted">Gain Cash & Carry · 2026–2027</div></div><button id="install">Install app</button></header>
+<section class="card hero"><div class="muted">Maximum possible earnings · through 21 February 2027</div><div class="big" id="maximum">$485.00</div><div class="muted">97 days × $5, assuming every day is worked</div><div class="bar"><span id="progress" style="width:0%"></span></div><div class="muted" id="progressText">0% of maximum earnings recorded</div></section>
+<section class="grid">
+<div class="card"><div class="muted">Earned</div><div class="metric" id="earned">$0</div><div class="muted">Confirmed workdays</div></div>
+<div class="card"><div class="muted">Missed days</div><div class="metric" id="missed">0</div><div class="muted">$5 not earned per day</div></div>
+<div class="card"><div class="muted">Received</div><div class="metric" id="received">$0</div><div class="muted">Payments marked received</div></div>
+<div class="card"><div class="muted">Still owed</div><div class="metric" id="owed">$0</div><div class="muted">Earned but not yet paid</div></div>
+</section>
+<section class="card"><h2>Daily attendance</h2><div class="muted" style="margin-bottom:12px">Tap a date, then record whether you worked.</div><div class="row"><button id="prev">← Previous</button><strong id="month" style="text-align:center"></strong><button id="next">Next →</button></div><div class="calendar" style="margin-top:12px" id="calendar"></div><p class="muted" id="selectedLabel">Select a date</p><div class="row"><button class="worked" id="yes">✓ Worked · $5</button><button class="missed" id="no">✕ Missed · $0</button></div><button id="clear" style="width:100%;margin-top:8px">Clear date</button></section>
+<section class="card"><h2>Weekly payment schedule</h2><p class="note">Payment dates assume you are paid one day after each completed seven-day period. Only mark a payment received after the money reaches you.</p><div class="scroll"><table><thead><tr><th>Payment date</th><th>Work period</th><th>Amount</th><th>Status</th></tr></thead><tbody id="payments"></tbody></table></div></section>
+<section class="card"><h2>US$150 business savings goal</h2><div class="row"><strong id="saved">$0 / $150</strong><span class="muted" id="remaining" style="text-align:right">$150 remaining</span></div><div class="bar"><span id="savebar" style="width:0%"></span></div><div class="row" style="margin-top:12px"><input id="saveamount" type="number" min="0" step=".01" placeholder="Amount saved"><button class="primary" id="addsave">Add</button></div></section>
+<section class="card"><h2>Backup your records</h2><div class="row"><button id="export">Export attendance CSV</button><button id="backup">Download backup</button></div><p class="note">Records are saved on this phone in this browser. Export a backup regularly. Clearing browser data may erase your records.</p><button id="reset" style="color:#a33">Reset all records</button></section>
+<p class="note" style="text-align:center">Daily wage: US$5 · Start date: 17 November 2026 · End date: 21 February 2027</p>
+<script>
+(()=>{
+const $=id=>document.getElementById(id),start=new Date(2026,10,17),end=new Date(2027,1,21),today=new Date();today.setHours(0,0,0,0);
+const store='gcc-earnings-pwa-v1';let state={attendance:{},payments:{},savings:0},view=new Date(2026,10,1),selected=new Date(2026,10,20);
+try{state={...state,...JSON.parse(localStorage.getItem(store)||'{}')}}catch(e){}
+const key=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const label=d=>d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+const days=[];for(let d=new Date(start);d<=end;d.setDate(d.getDate()+1))days.push(new Date(d));
+const persist=()=>localStorage.setItem(store,JSON.stringify(state));
+function render(){
+let worked=days.filter(d=>state.attendance[key(d)]==='worked').length,missed=days.filter(d=>state.attendance[key(d)]==='missed').length,earned=worked*5,paid=0,rows=[];
+for(let i=0;i<days.length;i+=7){let p=days.slice(i,i+7),due=new Date(p[p.length-1]);due.setDate(due.getDate()+1);let id=key(due),amount=p.filter(d=>state.attendance[key(d)]==='worked').length*5;if(state.payments[id])paid+=amount;rows.push({p,due,id,amount})}
+$('earned').textContent='$'+earned.toFixed(2);$('missed').textContent=missed;$('received').textContent='$'+paid.toFixed(2);$('owed').textContent='$'+Math.max(0,earned-paid).toFixed(2);
+$('progress').style.width=(earned/485*100)+'%';$('progressText').textContent=(earned/485*100).toFixed(1)+'% of maximum earnings recorded';
+$('payments').innerHTML=rows.map(r=>`<tr><td>${label(r.due)}</td><td>${label(r.p[0])}–${label(r.p.at(-1))}</td><td>$${r.amount.toFixed(2)}</td><td>${state.payments[r.id]?'✓ Received':`<button data-pay="${r.id}" ${r.due>today?'disabled':''}>Mark paid</button>`}</td></tr>`).join('');
+document.querySelectorAll('[data-pay]').forEach(b=>b.onclick=()=>{state.payments[b.dataset.pay]=true;persist();render()});
+$('saved').textContent='$'+Number(state.savings).toFixed(2)+' / $150';$('remaining').textContent='$'+Math.max(0,150-state.savings).toFixed(2)+' remaining';$('savebar').style.width=Math.min(100,state.savings/150*100)+'%';
+calendar();
+}
+function calendar(){
+$('month').textContent=view.toLocaleDateString('en-US',{month:'long',year:'numeric'});let first=new Date(view.getFullYear(),view.getMonth(),1),offset=first.getDay(),last=new Date(view.getFullYear(),view.getMonth()+1,0).getDate(),html='';
+for(let i=0;i<offset;i++)html+='<button class="empty" disabled></button>';
+for(let n=1;n<=last;n++){let d=new Date(view.getFullYear(),view.getMonth(),n),k=key(d),s=state.attendance[k],inside=d>=start&&d<=end,cls=s==='worked'?'worked':s==='missed'?'missed':'';html+=`<button data-date="${k}" class="${cls} ${key(selected)===k?'selected':''}" ${inside?'':'disabled'}>${n}<small>${s==='worked'?'✓ $5':s==='missed'?'Missed':inside?'·':''}</small></button>`}
+$('calendar').innerHTML=html;document.querySelectorAll('[data-date]').forEach(b=>b.onclick=()=>{selected=new Date(b.dataset.date+'T12:00:00');calendar()});
+$('selectedLabel').textContent=label(selected)+' · '+(state.attendance[key(selected)]||'Not recorded');
+}
+$('prev').onclick=()=>{view.setMonth(view.getMonth()-1);calendar()};$('next').onclick=()=>{view.setMonth(view.getMonth()+1);calendar()};
+$('yes').onclick=()=>{if(selected<start||selected>end)return;state.attendance[key(selected)]='worked';persist();render()};
+$('no').onclick=()=>{if(selected<start||selected>end)return;state.attendance[key(selected)]='missed';persist();render()};
+$('clear').onclick=()=>{delete state.attendance[key(selected)];persist();render()};
+$('addsave').onclick=()=>{let n=Number($('saveamount').value);if(n>0&&Number.isFinite(n)){state.savings=Number(state.savings)+n;$('saveamount').value='';persist();render()}};
+$('reset').onclick=()=>{if(confirm('Permanently erase all attendance, payment and savings records on this phone?')){state={attendance:{},payments:{},savings:0};persist();render()}};
+$('export').onclick=()=>{let csv='Date,Attendance,Wages\\n'+days.map(d=>`${key(d)},${state.attendance[key(d)]||'Not recorded'},${state.attendance[key(d)]==='worked'?5:0}`).join('\\n');download(csv,'attendance.csv','text/csv')};
+$('backup').onclick=()=>download(JSON.stringify(state,null,2),'earnings-backup.json','application/json');
+function download(content,name,type){let a=document.createElement('a'),u=URL.createObjectURL(new Blob([content],{type}));a.href=u;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(u),1000)}
+render();
+let promptEvent;window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();promptEvent=e;$('install').style.display='block'});$('install').onclick=async()=>{if(promptEvent){promptEvent.prompt();await promptEvent.userChoice;promptEvent=null}else alert('In Chrome, open the menu ⋮ and choose Add to Home screen or Install app.')};
+if('serviceWorker'in navigator && location.protocol.startsWith('http'))navigator.serviceWorker.register('./sw.js').catch(()=>{});
+})();
+</script>
+</body></html>
