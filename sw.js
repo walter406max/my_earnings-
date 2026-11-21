@@ -1,6 +1,6 @@
 // Earnings Tracker service worker: precaches everything so the app works with no connection.
 // Bump VERSION whenever you change any app file to force a clean refresh.
-const VERSION = 'v10';
+const VERSION = 'v11';
 const CACHE = 'earnings-tracker-' + VERSION;
 const FILES = [
   './',
@@ -94,7 +94,21 @@ async function checkGoals() {
   });
   await idbSet('goalsNotified', tk);
 }
-self.addEventListener('periodicsync', e => { if (e.tag === 'payment-check') e.waitUntil(Promise.all([checkPayments(), checkGoals()])); });
+async function checkRecord() {
+  if (!(await idbGet('recEnabled'))) return;
+  const now = new Date();
+  if (now.getHours() < 18) return;
+  const tk = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+  const rec = await idbGet('record');
+  if (!rec || tk < rec.start || tk > rec.end || rec.days.includes(tk)) return;
+  if ((await idbGet('recNotified')) === tk) return;
+  await self.registration.showNotification('Record today', {
+    body: 'Did you work today? Tap to mark today as worked or missed.',
+    tag: 'record-daily', icon: 'icon-192.png', badge: 'icon-192.png', data: { url: './#/home' }
+  });
+  await idbSet('recNotified', tk);
+}
+self.addEventListener('periodicsync', e => { if (e.tag === 'payment-check') e.waitUntil(Promise.all([checkPayments(), checkGoals(), checkRecord()])); });
 self.addEventListener('notificationclick', e => {
   e.notification.close();
   const url = (e.notification.data && e.notification.data.url) || './#/pay';
