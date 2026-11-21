@@ -1,6 +1,6 @@
 // Earnings Tracker service worker: precaches everything so the app works with no connection.
 // Bump VERSION whenever you change any app file to force a clean refresh.
-const VERSION = 'v4';
+const VERSION = 'v5';
 const CACHE = 'earnings-tracker-' + VERSION;
 const FILES = [
   './',

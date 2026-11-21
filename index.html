@@ -42,7 +42,7 @@ a{color:inherit;text-decoration:none}
 :focus-visible{outline:3px solid var(--berry);outline-offset:2px;border-radius:10px}
 
 main{max-width:560px;margin:0 auto;outline:none;
-  padding:calc(env(safe-area-inset-top) + 22px) 20px calc(104px + env(safe-area-inset-bottom))}
+  padding:calc(env(safe-area-inset-top) + 22px) 20px calc(112px + max(env(safe-area-inset-bottom),14px))}
 .page{display:none}
 .page.active{display:block;animation:fade .2s ease}
 @keyframes fade{from{opacity:0}to{opacity:1}}
@@ -99,19 +99,19 @@ a.row:active,button.row:active{background:var(--tint)}
 .icon-btn{width:44px;height:44px;border-radius:50%;border:0;background:var(--tint);display:grid;place-items:center;color:var(--berry)}
 .icon-btn:disabled{opacity:.3}
 .icon-btn svg{width:10px;height:16px}
-.dow,.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.dow,.cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:2px}
 .dow{margin-top:14px;color:var(--muted);font-size:13px;text-align:center}
 .cal{margin-top:6px}
-.day{aspect-ratio:1;min-height:44px;border:0;border-radius:50%;background:none;display:flex;flex-direction:column;
-  align-items:center;justify-content:center;padding:0;line-height:1;font-size:17px;position:relative}
+.day{width:100%;height:48px;border:0;background:none;padding:0;display:flex;align-items:center;justify-content:center;font-size:17px;color:inherit}
+.day .c{width:100%;max-width:42px;aspect-ratio:1;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1}
 .day b{font-weight:500}
 .day i{font-style:normal;font-size:10px;height:11px;margin-top:2px;font-weight:700}
-.day.worked{background:var(--berry);color:var(--on-berry)}
-.day.missed{background:var(--tint-2);color:var(--plum)}
-@media (prefers-color-scheme:dark){.day.missed{color:var(--ink)}}
-.day.today{box-shadow:0 0 0 2px var(--surface),0 0 0 4px var(--berry)}
+.day.worked .c{background:var(--berry);color:var(--on-berry)}
+.day.missed .c{background:var(--tint-2);color:var(--plum)}
+@media (prefers-color-scheme:dark){.day.missed .c{color:var(--ink)}}
+.day.today .c{box-shadow:0 0 0 2px var(--surface),0 0 0 4px var(--berry)}
 .day.out{opacity:.25}
-.day:not(:disabled):active{transform:scale(.92)}
+.day:not(:disabled):active .c{transform:scale(.92)}
 .legend{display:flex;gap:18px;flex-wrap:wrap;margin-top:16px;color:var(--muted);font-size:14px}
 .legend span{display:inline-flex;align-items:center;gap:7px}
 .legend i{width:12px;height:12px;border-radius:50%;display:inline-block}
@@ -148,7 +148,7 @@ a.row:active,button.row:active{background:var(--tint)}
 /* Tab bar */
 nav{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--bar);
   -webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);
-  border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
+  border-top:1px solid var(--line);padding-bottom:max(env(safe-area-inset-bottom),14px)}
 nav ul{list-style:none;margin:0 auto;padding:0;max-width:560px;display:flex}
 nav li{flex:1}
 nav a{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;height:56px;
@@ -173,7 +173,7 @@ nav a[aria-current="page"] svg{stroke-width:2.1}
 .card .btn.quiet{padding-left:0;margin-top:4px}
 
 /* Toast */
-#toast{position:fixed;left:50%;bottom:calc(76px + env(safe-area-inset-bottom));z-index:60;transform:translate(-50%,12px);
+#toast{position:fixed;left:50%;bottom:calc(84px + max(env(safe-area-inset-bottom),14px));z-index:60;transform:translate(-50%,12px);
   background:var(--ink);color:var(--bg);padding:12px 18px;border-radius:30px;font-size:15px;font-weight:600;max-width:calc(100% - 40px);
   opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;text-align:center}
 #toast.show{opacity:1;transform:translate(-50%,0)}
@@ -499,7 +499,7 @@ function renderDays(c){
     const d=new Date(y,m,n),k=key(d),s=state.attendance[k],inside=d>=START&&d<=END;
     if(s==='worked')w++;else if(s==='missed')mi++;
     const cls='day'+(s?' '+s:'')+(k===key(c.t)?' today':'')+(inside?'':' out');
-    html+=`<button class="${cls}" data-act="open" data-date="${k}" aria-label="${fmtLong(d)}, ${s||'not recorded'}" ${inside?'':'disabled'}><b>${n}</b><i>${s==='worked'?'✓':s==='missed'?'✕':''}</i></button>`;
+    html+=`<button class="${cls}" data-act="open" data-date="${k}" aria-label="${fmtLong(d)}, ${s||'not recorded'}" ${inside?'':'disabled'}><span class="c"><b>${n}</b><i>${s==='worked'?'✓':s==='missed'?'✕':''}</i></span></button>`;
   }
   $('cal').innerHTML=html;
   $('prevM').disabled=view<=new Date(START.getFullYear(),START.getMonth(),1);
