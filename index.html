@@ -136,6 +136,9 @@ a.row:active,button.row:active{background:var(--tint)}
 .field{display:flex;gap:10px;margin-top:6px}
 .field input{flex:1;min-width:0;height:50px;border-radius:14px;border:1.5px solid var(--line);background:var(--bg);padding:0 14px;font-size:17px}
 .field input:focus{outline:none;border-color:var(--berry)}
+.fields{display:grid;grid-template-columns:.9fr 1.1fr;gap:10px;margin-top:10px}
+.fields input{min-width:0;height:50px;border-radius:14px;border:1.5px solid var(--line);background:var(--bg);padding:0 10px;font-size:16px;color-scheme:light dark}
+.fields input:focus{outline:none;border-color:var(--berry)}
 .twin{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
 .err{color:#b3261e;font-size:14px;min-height:20px;margin-top:8px}
 @media (prefers-color-scheme:dark){.err{color:#ff9a95}}
@@ -240,6 +243,24 @@ nav a[aria-current="page"] svg{stroke-width:2.1}
     <p class="sub" style="margin:12px 16px 0">Mark a payment only after the money reaches you. Confirm the pay arrangement with your employer.</p>
   </section>
 
+  <!-- EXPENSES -->
+  <section class="page" id="page-expenses" data-title="Expenses">
+    <header class="head"><h1 tabindex="-1">Expenses</h1><p class="sub">Write down what you spend.</p></header>
+    <div class="card summary">
+      <div><p class="label">This month</p><p id="xMonth">$0</p></div>
+      <div><p class="label">All time</p><p id="xTotal">$0</p></div>
+    </div>
+    <section class="card" aria-labelledby="addExpH">
+      <h3 id="addExpH">Add expense</h3>
+      <div class="field" style="margin-top:12px"><input id="eName" maxlength="40" autocomplete="off" enterkeyhint="next" placeholder="What was it for?" aria-label="Expense name"></div>
+      <div class="fields"><input id="eAmount" inputmode="decimal" autocomplete="off" enterkeyhint="done" placeholder="Amount" aria-label="Amount in dollars"><input id="eDate" type="date" aria-label="Date of expense"></div>
+      <button class="btn primary" style="width:100%;margin-top:10px" data-act="expAdd">Add expense</button>
+      <p class="err" id="eErr" role="alert"></p>
+    </section>
+    <h2>History</h2>
+    <div class="group" id="expList"></div>
+  </section>
+
   <!-- SAVINGS -->
   <section class="page" id="page-save" data-title="Savings">
     <header class="head"><h1 tabindex="-1">Savings</h1><p class="sub">Business goal: $150</p></header>
@@ -271,6 +292,12 @@ nav a[aria-current="page"] svg{stroke-width:2.1}
       <div class="row" id="installRow"><span class="grow">Install<small id="mInstall"></small></span><button class="btn small primary" id="installBtn" data-act="install" hidden>Install</button></div>
     </div>
 
+    <h2>Reminders</h2>
+    <div class="group">
+      <button class="row" data-act="notify"><span class="grow">Payment day alerts<small id="mNotifyNote">Get a notification when a payment is due.</small></span><span class="val" id="mNotifyVal">Off</span></button>
+      <button class="row" data-act="ics"><span class="grow">Add payment dates to calendar<small>Sets exact alarms in your calendar app. Most reliable.</small></span><span class="val">.ics</span></button>
+    </div>
+
     <h2>Backup</h2>
     <div class="group">
       <button class="row" data-act="backup"><span class="grow">Download backup</span><span class="val">JSON</span></button>
@@ -296,6 +323,7 @@ nav a[aria-current="page"] svg{stroke-width:2.1}
     <li><a href="#/home" data-route="home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11 12 4l8 7v8.5a.5.5 0 0 1-.5.5H15v-6H9v6H4.5a.5.5 0 0 1-.5-.5z"/></svg>Today</a></li>
     <li><a href="#/days" data-route="days"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5.5" width="16" height="14.5" rx="3"/><path d="M4 10h16M8.5 3.5v3.5M15.5 3.5v3.5"/></svg>Days</a></li>
     <li><a href="#/pay" data-route="pay"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6.5" width="18" height="11" rx="3"/><circle cx="12" cy="12" r="2.6"/></svg>Payments</a></li>
+    <li><a href="#/expenses" data-route="expenses"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3.5h12v17l-3-2-3 2-3-2-3 2z"/><path d="M9.5 8.5h5M9.5 12h5"/></svg>Expenses</a></li>
     <li><a href="#/save" data-route="save"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5v9M14.6 9.6c-.5-.8-1.4-1.2-2.6-1.2-1.5 0-2.5.7-2.5 1.8 0 2.6 5.2 1.2 5.2 3.8 0 1.1-1.1 1.8-2.7 1.8-1.2 0-2.2-.5-2.7-1.3"/></svg>Savings</a></li>
     <li><a href="#/more" data-route="more"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="18" cy="12" r="1.3"/></svg>More</a></li>
   </ul>
@@ -327,7 +355,7 @@ nav a[aria-current="page"] svg{stroke-width:2.1}
 const WAGE=5, GOAL=150;
 const START=new Date(2026,10,17), END=new Date(2027,1,21);
 const KEY='gcc-earnings-pwa-v1';           // same key as the earlier version, so existing records carry over
-const ROUTES={home:'Earnings',days:'Days',pay:'Payments',save:'Savings',more:'More'};
+const ROUTES={home:'Earnings',days:'Days',pay:'Payments',expenses:'Expenses',save:'Savings',more:'More'};
 
 /* ---------- Helpers ---------- */
 const $=id=>document.getElementById(id);
@@ -348,7 +376,7 @@ const DAYS=[];for(let d=new Date(START);d<=END;d.setDate(d.getDate()+1))DAYS.pus
 const MAX=DAYS.length*WAGE;
 
 /* ---------- Storage ---------- */
-const blank=()=>({v:2,attendance:{},payments:{},savings:[]});
+const blank=()=>({v:2,attendance:{},payments:{},savings:[],expenses:[]});
 function normalize(raw){
   const s=blank();
   if(!raw||typeof raw!=='object')return s;
@@ -363,6 +391,10 @@ function normalize(raw){
     }
   }else if(Number(raw.savings)>0){
     s.savings.push({id:uid(),date:key(new Date()),amount:round2(Number(raw.savings)),note:'Earlier savings'});
+  }
+  if(Array.isArray(raw.expenses))for(const e of raw.expenses){
+    const a=Number(e&&e.amount),nm=e&&e.name?String(e.name).trim().slice(0,40):'';
+    if(e&&Number.isFinite(a)&&a>0&&nm)s.expenses.push({id:String(e.id||uid()),date:DATE_RE.test(e.date)?e.date:key(new Date()),name:nm,amount:round2(a)});
   }
   return s;
 }
@@ -400,7 +432,10 @@ function compute(){
   }
   const earned=worked*WAGE,received=weeks.filter(w=>w.paid).reduce((a,w)=>a+w.amount,0);
   const saved=Math.max(0,round2(state.savings.reduce((a,e)=>a+e.amount,0)));
-  return {t,worked,missed,unrecorded,weeks,earned,received,owed:Math.max(0,earned-received),saved};
+  const ym=key(t).slice(0,7);
+  const expTotal=round2(state.expenses.reduce((a,e)=>a+e.amount,0));
+  const expMonth=round2(state.expenses.filter(e=>e.date.slice(0,7)===ym).reduce((a,e)=>a+e.amount,0));
+  return {t,worked,missed,unrecorded,weeks,earned,received,owed:Math.max(0,earned-received),saved,expTotal,expMonth};
 }
 
 /* ---------- Toast ---------- */
@@ -447,6 +482,7 @@ function renderHome(c){
     linkRow('#/days','Missed days',c.missed)+
     linkRow('#/pay','Received',money(c.received))+
     linkRow('#/pay','Still owed',money(c.owed))+
+    linkRow('#/expenses','Expenses',money(c.expTotal))+
     linkRow('#/save','Savings',`${money(c.saved)} of ${money(GOAL)}`);
 }
 
@@ -484,6 +520,11 @@ function renderPay(c){
   }).join('');
 }
 
+function renderExp(c){
+  $('xMonth').textContent=money(c.expMonth);$('xTotal').textContent=money(c.expTotal);
+  const list=[...state.expenses].reverse().sort((a,b)=>a.date<b.date?1:a.date>b.date?-1:0);
+  $('expList').innerHTML=list.length?list.map(e=>`<div class="row"><span class="grow">${esc(e.name)}<small>${fmt(parse(e.date),{day:'numeric',month:'short',year:'numeric'})}</small></span><span class="amt" style="font-weight:650">${money(e.amount)}</span><button class="del" data-act="delExp" data-id="${esc(e.id)}" aria-label="Delete ${esc(e.name)}">×</button></div>`).join(''):'<div class="empty">No expenses yet. Add the first one above.</div>';
+}
 function renderSave(c){
   const pct=Math.min(1,c.saved/GOAL),C=2*Math.PI*52;
   $('ringFill').style.strokeDasharray=C;$('ringFill').style.strokeDashoffset=C*(1-pct);
@@ -506,10 +547,13 @@ function renderMore(){
   else if(installEvent){msg='Add Earnings to your home screen.';btn=true}
   else if(isIOS)msg='In Safari, tap Share, then Add to Home Screen.';
   else msg='Open your browser menu and choose Install app or Add to Home Screen.';
+  const on=notifyOn()&&canNotify&&Notification.permission==='granted';
+  $('mNotifyVal').textContent=!canNotify?'Unavailable':on?'On':(typeof Notification!=='undefined'&&Notification.permission==='denied')?'Blocked':'Off';
+  $('mNotifyNote').textContent=on?'Alerts on payment day. Android checks about twice a day, so open the app if one is late.':'Get a notification when a payment is due.';
   $('mInstall').textContent=msg;$('installBtn').hidden=!btn;
 }
 
-function renderAll(){const c=compute();renderHome(c);renderDays(c);renderPay(c);renderSave(c);renderMore();if(sheetDate)renderSheet()}
+function renderAll(){const c=compute();renderHome(c);renderDays(c);renderPay(c);renderExp(c);renderSave(c);renderMore();syncReminders(c);if(sheetDate)renderSheet()}
 
 /* ---------- Sheet ---------- */
 let sheetDate=null,lastFocus=null;
@@ -550,6 +594,19 @@ function saveEntry(sign){
   if(persist()){toast(sign>0?`Added ${money(a)} to savings`:`Took out ${money(a)}`)}
   renderAll();
 }
+function addExpense(){
+  const err=$('eErr');err.textContent='';
+  const name=$('eName').value.trim().replace(/\s+/g,' ').slice(0,40);
+  const raw=$('eAmount').value.trim().replace(',','.'),date=$('eDate').value;
+  if(!name){err.textContent='Enter what the expense was for.';$('eName').focus();return}
+  if(!/^\d+(\.\d{1,2})?$/.test(raw)||Number(raw)<=0){err.textContent='Enter an amount above 0, like 3 or 4.50.';$('eAmount').focus();return}
+  if(!DATE_RE.test(date)){err.textContent='Pick a date.';return}
+  const a=round2(Number(raw));
+  state.expenses.push({id:uid(),date,name,amount:a});
+  $('eName').value='';$('eAmount').value='';$('eDate').value=key(todayDate());
+  if(persist())toast(`Added ${name}: ${money(a)}`);
+  renderAll();$('eName').focus();
+}
 function download(content,name,type){
   const a=document.createElement('a'),u=URL.createObjectURL(new Blob([content],{type}));
   a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1500);
@@ -570,9 +627,13 @@ document.addEventListener('click',e=>{
     case 'sheetClear':{const k=sheetDate;closeSheet();if(setStatus(k,null))toast(`${fmt(parse(k))} cleared`);break}
     case 'pay':state.payments[el.dataset.id]=true;if(persist())toast('Payment marked received');renderAll();break;
     case 'unpay':delete state.payments[el.dataset.id];if(persist())toast('Payment set back to unpaid');renderAll();break;
+    case 'expAdd':addExpense();break;
+    case 'delExp':state.expenses=state.expenses.filter(x=>x.id!==el.dataset.id);if(persist())toast('Expense deleted');renderAll();break;
     case 'saveAdd':saveEntry(1);break;
     case 'saveTake':saveEntry(-1);break;
     case 'delSave':state.savings=state.savings.filter(x=>x.id!==el.dataset.id);if(persist())toast('Entry deleted');renderAll();break;
+    case 'notify':toggleNotify();break;
+    case 'ics':download(buildICS(),'earnings-payment-dates.ics','text/calendar');toast('Open the file to add the dates to your calendar');break;
     case 'backup':download(JSON.stringify(state,null,2),`earnings-backup-${stamp()}.json`,'application/json');toast('Backup downloaded');break;
     case 'csv':{
       const rows=['Date,Attendance,Wages'].concat(DAYS.map(d=>{const s=state.attendance[key(d)];return `${key(d)},${s||'Not recorded'},${s==='worked'?WAGE:0}`}));
@@ -588,6 +649,8 @@ document.addEventListener('click',e=>{
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape'&&sheetDate)closeSheet();
   if(e.key==='Enter'&&e.target.id==='sInput'){e.preventDefault();saveEntry(1)}
+  if(e.key==='Enter'&&e.target.id==='eName'){e.preventDefault();$('eAmount').focus()}
+  if(e.key==='Enter'&&e.target.id==='eAmount'){e.preventDefault();addExpense()}
   if(e.key==='Tab'&&sheetDate){ // keep focus inside the sheet
     const f=[...$('sheet').querySelectorAll('button:not([hidden])')];if(!f.length)return;
     const first=f[0],last=f[f.length-1];
@@ -596,15 +659,74 @@ document.addEventListener('keydown',e=>{
   }
 });
 $('sInput').addEventListener('input',()=>{$('sErr').textContent=''});
+['eName','eAmount','eDate'].forEach(i=>$(i).addEventListener('input',()=>{$('eErr').textContent=''}));
+$('eDate').value=key(todayDate());
 $('restoreFile').addEventListener('change',async e=>{
   const f=e.target.files[0];e.target.value='';if(!f)return;
   try{
     const data=normalize(JSON.parse(await f.text()));
     const n=Object.keys(data.attendance).length;
-    if(!n&&!data.savings.length&&!Object.keys(data.payments).length){toast('That file has no records');return}
+    if(!n&&!data.savings.length&&!data.expenses.length&&!Object.keys(data.payments).length){toast('That file has no records');return}
     if(confirm(`Replace your current records with this backup (${n} recorded days)?`)){state=data;if(persist())toast('Backup restored');renderAll()}
   }catch(_){toast('That file is not a valid backup')}
 });
+
+/* ---------- Payment reminders ---------- */
+const idb=(mode,fn)=>new Promise((res,rej)=>{
+  const o=indexedDB.open('earnings-reminders',1);
+  o.onupgradeneeded=()=>o.result.createObjectStore('kv');
+  o.onsuccess=()=>{const db=o.result,tx=db.transaction('kv',mode),r=fn(tx.objectStore('kv'));
+    tx.oncomplete=()=>{db.close();res(r&&r.result)};tx.onerror=()=>rej(tx.error)};
+  o.onerror=()=>rej(o.error);
+});
+const kvGet=k=>idb('readonly',s=>s.get(k)).catch(()=>undefined);
+const kvSet=(k,v)=>idb('readwrite',s=>s.put(v,k)).catch(()=>{});
+const NOTIFY_KEY='gcc-earnings-notify';
+const notifyOn=()=>{try{return localStorage.getItem(NOTIFY_KEY)==='1'}catch(e){return false}};
+const canNotify='Notification' in window&&'serviceWorker' in navigator;
+function syncReminders(c){
+  kvSet('weeks',c.weeks.map(w=>({id:w.id,amount:w.amount,paid:w.paid,from:key(w.p[0]),to:key(w.p[w.p.length-1])})));
+}
+async function notifyDue(){
+  if(!canNotify||!notifyOn()||Notification.permission!=='granted')return;
+  try{
+    const reg=await navigator.serviceWorker.ready,done=(await kvGet('notified'))||[],tk=key(todayDate());
+    const due=compute().weeks.filter(w=>!w.paid&&w.amount>0&&w.id<=tk&&!done.includes(w.id));
+    for(const w of due){
+      await reg.showNotification('Payment day',{body:`${money(w.amount)} is due for ${fmt(w.p[0])} – ${fmt(w.p[w.p.length-1])}. Mark it received once it arrives.`,
+        tag:'pay-'+w.id,icon:'icon-192.png',badge:'icon-192.png',data:{url:'./#/pay'}});
+      done.push(w.id);
+    }
+    if(due.length)await kvSet('notified',done);
+  }catch(e){}
+}
+async function toggleNotify(){
+  if(!canNotify){toast('This browser does not support alerts');return}
+  if(notifyOn()){
+    try{localStorage.setItem(NOTIFY_KEY,'0')}catch(e){}
+    kvSet('enabled',false);
+    try{const reg=await navigator.serviceWorker.ready;if(reg.periodicSync)await reg.periodicSync.unregister('payment-check')}catch(e){}
+    toast('Payment alerts off');renderMore();return;
+  }
+  const perm=Notification.permission==='granted'?'granted':await Notification.requestPermission();
+  if(perm!=='granted'){toast('Allow notifications for Earnings in phone settings');renderMore();return}
+  try{localStorage.setItem(NOTIFY_KEY,'1')}catch(e){}
+  await kvSet('enabled',true);syncReminders(compute());
+  try{const reg=await navigator.serviceWorker.ready;if(reg.periodicSync)await reg.periodicSync.register('payment-check',{minInterval:12*60*60*1000})}catch(e){}
+  toast('Payment alerts on');renderMore();notifyDue();
+}
+function buildICS(){
+  const c=compute(),z=n=>String(n).padStart(2,'0'),now=new Date();
+  const stampU=`${now.getUTCFullYear()}${z(now.getUTCMonth()+1)}${z(now.getUTCDate())}T${z(now.getUTCHours())}${z(now.getUTCMinutes())}${z(now.getUTCSeconds())}Z`;
+  const L=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Earnings//EN','CALSCALE:GREGORIAN'];
+  for(const w of c.weeks){
+    const d=w.id.replace(/-/g,'');
+    L.push('BEGIN:VEVENT',`UID:earnings-${d}@earnings-app`,`DTSTAMP:${stampU}`,`DTSTART:${d}T090000`,`DTEND:${d}T093000`,
+      'SUMMARY:Payment day: Earnings',`DESCRIPTION:Pay for ${fmt(w.p[0])} to ${fmt(w.p[w.p.length-1])}. Open Earnings to see the amount and mark it received.`,
+      'BEGIN:VALARM','ACTION:DISPLAY','DESCRIPTION:Payment day','TRIGGER:PT0S','END:VALARM','END:VEVENT');
+  }
+  L.push('END:VCALENDAR');return L.join('\r\n');
+}
 
 /* ---------- Install + offline ---------- */
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installEvent=e;renderMore()});
@@ -625,9 +747,9 @@ function route(){
   if(sheetDate)closeSheet();
 }
 window.addEventListener('hashchange',()=>{route();const h=document.querySelector('.page.active h1');if(h)h.focus({preventScroll:true})});
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')renderAll()});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){renderAll();notifyDue()}});
 
-renderAll();route();
+renderAll();route();notifyDue();
 })();
 </script>
 </body>
