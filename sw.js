@@ -1,6 +1,6 @@
 // Earnings Tracker service worker: precaches everything so the app works with no connection.
 // Bump VERSION whenever you change any app file to force a clean refresh.
-const VERSION = 'v9';
+const VERSION = 'v10';
 const CACHE = 'earnings-tracker-' + VERSION;
 const FILES = [
   './',
@@ -71,11 +71,35 @@ async function checkPayments() {
   }
   if (due.length) await idbSet('notified', done);
 }
-self.addEventListener('periodicsync', e => { if (e.tag === 'payment-check') e.waitUntil(checkPayments()); });
+async function checkGoals() {
+  if (!(await idbGet('goalsEnabled'))) return;
+  const now = new Date();
+  if (now.getHours() < 8) return;
+  const tk = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+  if ((await idbGet('goalsNotified')) === tk) return;
+  const open = ((await idbGet('goals')) || []).filter(g => g.saved < g.target);
+  if (!open.length) return;
+  const mid = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const g = open[Math.floor((mid.getTime() - mid.getTimezoneOffset() * 60000) / 864e5) % open.length];
+  const m = n => '$' + (Number.isInteger(n) ? n : n.toFixed(2));
+  const left = Math.round((g.target - g.saved) * 100) / 100;
+  let hint = m(left) + ' to go.';
+  if (g.deadline) {
+    const p = g.deadline.split('-').map(Number), days = Math.round((new Date(p[0], p[1] - 1, p[2]) - mid) / 864e5);
+    hint = days < 0 ? 'The target date has passed. ' + m(left) + ' still to go.' : 'Save about ' + m(Math.ceil(left / (days + 1) * 100) / 100) + ' a day to reach it.';
+  }
+  await self.registration.showNotification('Goal check-in', {
+    body: g.name + ': ' + m(g.saved) + ' of ' + m(g.target) + ' (' + Math.round(g.saved / g.target * 100) + '%). ' + hint,
+    tag: 'goals-daily', icon: 'icon-192.png', badge: 'icon-192.png', data: { url: './#/goals' }
+  });
+  await idbSet('goalsNotified', tk);
+}
+self.addEventListener('periodicsync', e => { if (e.tag === 'payment-check') e.waitUntil(Promise.all([checkPayments(), checkGoals()])); });
 self.addEventListener('notificationclick', e => {
   e.notification.close();
+  const url = (e.notification.data && e.notification.data.url) || './#/pay';
   e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
-    for (const c of list) { if ('focus' in c) { if (c.navigate) c.navigate('./#/pay'); return c.focus(); } }
-    return self.clients.openWindow('./#/pay');
+    for (const c of list) { if ('focus' in c) { if (c.navigate) c.navigate(url); return c.focus(); } }
+    return self.clients.openWindow(url);
   }));
 });

@@ -186,6 +186,12 @@ nav a[aria-current="page"] svg{stroke-width:2.1}
   opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;text-align:center}
 #toast.show{opacity:1;transform:translate(-50%,0)}
 
+.back{display:inline-flex;align-items:center;min-height:44px;color:var(--berry);font-weight:600;margin:-8px 0 8px;font-size:17px}
+.goalcard{display:block}
+.goalcard:active{transform:scale(.99)}
+.gtop{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.goalcard .bar{margin-top:14px}
+.goalcard .sub{margin-top:4px}
 /* Opening animation */
 #splash{position:fixed;inset:0;z-index:100;display:flex;flex-direction:column;align-items:center;justify-content:center;
   background:radial-gradient(circle at 50% 42%,#c2185b 0,#a31553 48%,#7d1240 100%);color:#fff;
@@ -310,24 +316,42 @@ html.boot .page.active>*:nth-child(n+6){animation-delay:2.95s}
     <div class="group" id="expList"></div>
   </section>
 
-  <!-- SAVINGS -->
-  <section class="page" id="page-save" data-title="Savings">
-    <header class="head"><h1 tabindex="-1">Savings</h1><p class="sub">Business goal: $150</p></header>
+  <!-- GOALS -->
+  <section class="page" id="page-goals" data-title="Goals">
+    <header class="head"><h1 tabindex="-1">Goals</h1><p class="sub">Save toward what matters.</p></header>
+    <div id="goalCards"></div>
+    <section class="card" aria-labelledby="addGoalH" style="margin-top:14px">
+      <h3 id="addGoalH">New goal</h3>
+      <div class="field" style="margin-top:12px"><input id="gnName" maxlength="40" autocomplete="off" enterkeyhint="next" placeholder="What are you saving for?" aria-label="Goal name"></div>
+      <div class="fields"><input id="gnTarget" inputmode="decimal" autocomplete="off" enterkeyhint="done" placeholder="Amount" aria-label="Amount needed in dollars"><input id="gnDate" type="date" aria-label="Target date, optional"></div>
+      <p class="sub" style="margin-top:8px">The date is optional. With a date, reminders tell you how much to save each day.</p>
+      <button class="btn primary" style="width:100%;margin-top:10px" data-act="goalAdd">Add goal</button>
+      <p class="err" id="gnErr" role="alert"></p>
+    </section>
+    <h2>Reminders</h2>
+    <div class="group"><button class="row" data-act="goalnotify"><span class="grow">Daily goal reminders<small id="gNotifyNote">A short daily check-in on your goals.</small></span><span class="val" id="gNotifyVal">Off</span></button></div>
+  </section>
+
+  <section class="page" id="page-goal" data-title="Goal">
+    <a class="back" href="#/goals">&lsaquo; Goals</a>
+    <header class="head"><h1 tabindex="-1" id="gName"></h1><p class="sub" id="gSub"></p></header>
     <section class="card">
       <div class="ringwrap">
-        <svg class="ring" viewBox="0 0 120 120" role="img" id="ringSvg" aria-label="0% of goal saved">
+        <svg class="ring" viewBox="0 0 120 120" role="img" id="gRingSvg" aria-label="0% saved">
           <circle class="track" cx="60" cy="60" r="52"/>
-          <circle class="fill" id="ringFill" cx="60" cy="60" r="52" stroke-dasharray="326.73" stroke-dashoffset="326.73"/>
-          <text x="60" y="60" id="ringText">0%</text>
+          <circle class="fill" id="gRingFill" cx="60" cy="60" r="52" stroke-dasharray="326.73" stroke-dashoffset="326.73"/>
+          <text x="60" y="60" id="gRingText">0%</text>
         </svg>
-        <div><p class="amt" id="sAmt">$0</p><p class="sub" id="sLeft">$150 to go</p></div>
+        <div><p class="amt" id="gAmt">$0</p><p class="sub" id="gLeft"></p></div>
       </div>
-      <div class="field" style="margin-top:20px"><input id="sInput" inputmode="decimal" autocomplete="off" placeholder="Amount" aria-label="Amount in dollars"></div>
-      <div class="twin"><button class="btn primary" data-act="saveAdd">Add</button><button class="btn" data-act="saveTake">Take out</button></div>
-      <p class="err" id="sErr" role="alert"></p>
+      <div class="field" style="margin-top:20px"><input id="gInput" inputmode="decimal" autocomplete="off" placeholder="Amount" aria-label="Amount in dollars"></div>
+      <div class="twin"><button class="btn primary" data-act="gAdd">Add money</button><button class="btn" data-act="gTake">Take out</button></div>
+      <p class="err" id="gErr" role="alert"></p>
     </section>
+    <p class="sub" id="gHint" style="margin:14px 16px 0"></p>
     <h2>History</h2>
-    <div class="group" id="saveList"></div>
+    <div class="group" id="gList"></div>
+    <div class="group" style="margin-top:26px"><button class="row danger" data-act="goalDelete">Delete this goal</button></div>
   </section>
 
   <!-- MORE -->
@@ -350,6 +374,7 @@ html.boot .page.active>*:nth-child(n+6){animation-delay:2.95s}
     <h2>Reminders</h2>
     <div class="group">
       <button class="row" data-act="notify"><span class="grow">Payment day alerts<small id="mNotifyNote">Get a notification when a payment is due.</small></span><span class="val" id="mNotifyVal">Off</span></button>
+      <button class="row" data-act="goalnotify"><span class="grow">Daily goal reminders<small>A short daily check-in on your goals.</small></span><span class="val" id="mGoalVal">Off</span></button>
       <button class="row" data-act="ics"><span class="grow">Add payment dates to calendar<small>Sets exact alarms in your calendar app. Most reliable.</small></span><span class="val">.ics</span></button>
     </div>
 
@@ -379,7 +404,7 @@ html.boot .page.active>*:nth-child(n+6){animation-delay:2.95s}
     <li><a href="#/days" data-route="days"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5.5" width="16" height="14.5" rx="3"/><path d="M4 10h16M8.5 3.5v3.5M15.5 3.5v3.5"/></svg>Days</a></li>
     <li><a href="#/pay" data-route="pay"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6.5" width="18" height="11" rx="3"/><circle cx="12" cy="12" r="2.6"/></svg>Payments</a></li>
     <li><a href="#/expenses" data-route="expenses"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3.5h12v17l-3-2-3 2-3-2-3 2z"/><path d="M9.5 8.5h5M9.5 12h5"/></svg>Expenses</a></li>
-    <li><a href="#/save" data-route="save"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5v9M14.6 9.6c-.5-.8-1.4-1.2-2.6-1.2-1.5 0-2.5.7-2.5 1.8 0 2.6 5.2 1.2 5.2 3.8 0 1.1-1.1 1.8-2.7 1.8-1.2 0-2.2-.5-2.7-1.3"/></svg>Savings</a></li>
+    <li><a href="#/goals" data-route="goals"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r=".9"/></svg>Goals</a></li>
     <li><a href="#/more" data-route="more"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="18" cy="12" r="1.3"/></svg>More</a></li>
   </ul>
 </nav>
@@ -410,7 +435,7 @@ html.boot .page.active>*:nth-child(n+6){animation-delay:2.95s}
 const WAGE=5, GOAL=150;
 const START=new Date(2026,10,17), END=new Date(2027,1,21);
 const KEY='gcc-earnings-pwa-v1';           // same key as the earlier version, so existing records carry over
-const ROUTES={home:'Earnings',days:'Days',pay:'Payments',expenses:'Expenses',save:'Savings',more:'More'};
+const ROUTES={home:'Earnings',days:'Days',pay:'Payments',expenses:'Expenses',goals:'Goals',more:'More'};
 
 /* ---------- Helpers ---------- */
 const $=id=>document.getElementById(id);
@@ -431,7 +456,7 @@ const DAYS=[];for(let d=new Date(START);d<=END;d.setDate(d.getDate()+1))DAYS.pus
 const MAX=DAYS.length*WAGE;
 
 /* ---------- Storage ---------- */
-const blank=()=>({v:2,attendance:{},payments:{},savings:[],expenses:[]});
+const blank=()=>({v:2,attendance:{},payments:{},savings:[],expenses:[],goals:[]});
 function normalize(raw){
   const s=blank();
   if(!raw||typeof raw!=='object')return s;
@@ -442,10 +467,20 @@ function normalize(raw){
   if(Array.isArray(raw.savings)){
     for(const e of raw.savings){
       const a=Number(e&&e.amount);
-      if(e&&Number.isFinite(a)&&a!==0)s.savings.push({id:String(e.id||uid()),date:DATE_RE.test(e.date)?e.date:key(new Date()),amount:round2(a),note:e.note?String(e.note).slice(0,60):''});
+      if(e&&Number.isFinite(a)&&a!==0)s.savings.push({id:String(e.id||uid()),date:DATE_RE.test(e.date)?e.date:key(new Date()),amount:round2(a),note:e.note?String(e.note).slice(0,60):'',goalId:e.goalId?String(e.goalId):''});
     }
   }else if(Number(raw.savings)>0){
-    s.savings.push({id:uid(),date:key(new Date()),amount:round2(Number(raw.savings)),note:'Earlier savings'});
+    s.savings.push({id:uid(),date:key(new Date()),amount:round2(Number(raw.savings)),note:'Earlier savings',goalId:''});
+  }
+  if(Array.isArray(raw.goals))for(const g of raw.goals){
+    const t=Number(g&&g.target),nm=g&&g.name?String(g.name).trim().slice(0,40):'';
+    if(g&&Number.isFinite(t)&&t>0&&nm)s.goals.push({id:String(g.id||uid()),name:nm,target:round2(t),deadline:DATE_RE.test(g.deadline)?g.deadline:'',created:DATE_RE.test(g.created)?g.created:key(new Date())});
+  }
+  const gids=new Set(s.goals.map(g=>g.id)),orphans=s.savings.filter(e=>!gids.has(e.goalId));
+  if(orphans.length){
+    let tg=s.goals[0];
+    if(!tg){tg={id:uid(),name:'Business goal',target:GOAL,deadline:'',created:key(new Date())};s.goals.push(tg)}
+    orphans.forEach(e=>{e.goalId=tg.id});
   }
   if(Array.isArray(raw.expenses))for(const e of raw.expenses){
     const a=Number(e&&e.amount),nm=e&&e.name?String(e.name).trim().slice(0,40):'';
@@ -456,7 +491,7 @@ function normalize(raw){
 let state=blank(), needsMigrate=false;
 try{
   const raw=localStorage.getItem(KEY);
-  if(raw){const parsed=JSON.parse(raw);state=normalize(parsed);needsMigrate=parsed.v!==2}
+  if(raw){const parsed=JSON.parse(raw);state=normalize(parsed);needsMigrate=parsed.v!==2||(!Array.isArray(parsed.goals)&&state.goals.length>0)}
 }catch(e){}
 
 function persist(){
@@ -486,11 +521,12 @@ function compute(){
     weeks.push({p,due,id,worked:w,amount:w*WAGE,paid:!!state.payments[id]});
   }
   const earned=worked*WAGE,received=weeks.filter(w=>w.paid).reduce((a,w)=>a+w.amount,0);
-  const saved=Math.max(0,round2(state.savings.reduce((a,e)=>a+e.amount,0)));
+  const goals=state.goals.map(g=>{const sv=Math.max(0,round2(state.savings.filter(e=>e.goalId===g.id).reduce((a,e)=>a+e.amount,0)));return {...g,saved:sv,pct:Math.min(1,sv/g.target)}});
+  const goalsSaved=round2(goals.reduce((a,g)=>a+Math.min(g.saved,g.target),0)),goalsTarget=round2(goals.reduce((a,g)=>a+g.target,0));
   const ym=key(t).slice(0,7);
   const expTotal=round2(state.expenses.reduce((a,e)=>a+e.amount,0));
   const expMonth=round2(state.expenses.filter(e=>e.date.slice(0,7)===ym).reduce((a,e)=>a+e.amount,0));
-  return {t,worked,missed,unrecorded,weeks,earned,received,owed:Math.max(0,earned-received),saved,expTotal,expMonth};
+  return {t,worked,missed,unrecorded,weeks,earned,received,owed:Math.max(0,earned-received),goals,goalsSaved,goalsTarget,expTotal,expMonth};
 }
 
 /* ---------- Toast ---------- */
@@ -538,7 +574,7 @@ function renderHome(c){
     linkRow('#/pay','Received',money(c.received))+
     linkRow('#/pay','Still owed',money(c.owed))+
     linkRow('#/expenses','Expenses',money(c.expTotal))+
-    linkRow('#/save','Savings',`${money(c.saved)} of ${money(GOAL)}`);
+    linkRow('#/goals','Goals',c.goals.length?`${money(c.goalsSaved)} of ${money(c.goalsTarget)}`:'Add a goal');
 }
 
 let view=new Date(2026,10,1);
@@ -580,17 +616,33 @@ function renderExp(c){
   const list=[...state.expenses].reverse().sort((a,b)=>a.date<b.date?1:a.date>b.date?-1:0);
   $('expList').innerHTML=list.length?list.map(e=>`<div class="row"><span class="grow">${esc(e.name)}<small>${fmt(parse(e.date),{day:'numeric',month:'short',year:'numeric'})}</small></span><span class="amt" style="font-weight:650">${money(e.amount)}</span><button class="del" data-act="delExp" data-id="${esc(e.id)}" aria-label="Delete ${esc(e.name)}">×</button></div>`).join(''):'<div class="empty">No expenses yet. Add the first one above.</div>';
 }
-function renderSave(c){
-  const pct=Math.min(1,c.saved/GOAL),C=2*Math.PI*52;
-  $('ringFill').style.strokeDasharray=C;$('ringFill').style.strokeDashoffset=C*(1-pct);
-  $('ringText').textContent=Math.round(pct*100)+'%';
-  $('ringSvg').setAttribute('aria-label',`${Math.round(pct*100)}% of goal saved`);
-  $('sAmt').textContent=money(c.saved);
-  $('sLeft').textContent=c.saved>=GOAL?'Goal reached':`${money(round2(GOAL-c.saved))} to go`;
-  const list=[...state.savings].reverse();
-  $('saveList').innerHTML=list.length?list.map(e=>`<div class="row"><span class="grow">${e.amount>0?'Added':'Taken out'}<small>${fmt(parse(e.date),{day:'numeric',month:'short',year:'numeric'})}${e.note?', '+esc(e.note):''}</small></span><span class="amt" style="font-weight:650">${e.amount>0?'+':'−'}${money(Math.abs(e.amount))}</span><button class="del" data-act="delSave" data-id="${esc(e.id)}" aria-label="Delete this entry">×</button></div>`).join(''):'<div class="empty">Nothing saved yet. Add what you set aside for your business.</div>';
+let curGoal='';
+function goalHint(g,t){
+  const left=round2(g.target-g.saved);
+  if(left<=0)return 'Goal reached. Well done.';
+  if(!g.deadline)return `${money(left)} to go.`;
+  const days=Math.round((parse(g.deadline)-t)/864e5);
+  if(days<0)return `The target date has passed. ${money(left)} still to go.`;
+  const per=Math.ceil(left/(days+1)*100)/100;
+  return `Save about ${money(per)} a day to reach it by ${fmt(parse(g.deadline),{day:'numeric',month:'long'})}.`;
 }
-
+function renderGoals(c){
+  $('goalCards').innerHTML=c.goals.length?c.goals.map(g=>`<a class="card goalcard" href="#/goal/${esc(g.id)}"><div class="gtop"><h3>${esc(g.name)}</h3><span class="chip">${g.pct>=1?'Reached':Math.round(g.pct*100)+'%'}</span></div><p class="sub">${money(g.saved)} of ${money(g.target)}${g.deadline?', by '+fmt(parse(g.deadline),{day:'numeric',month:'short'}):''}</p><div class="bar" aria-hidden="true"><span style="width:${g.pct*100}%"></span></div></a>`).join(''):'<div class="card empty">No goals yet. Add your first one below.</div>';
+}
+function renderGoal(c){
+  const g=c.goals.find(x=>x.id===curGoal);if(!g)return;
+  $('gName').textContent=g.name;
+  $('gSub').textContent=`Target ${money(g.target)}${g.deadline?', by '+fmt(parse(g.deadline),{day:'numeric',month:'long',year:'numeric'}):''}`;
+  const C=2*Math.PI*52;
+  $('gRingFill').style.strokeDasharray=C;$('gRingFill').style.strokeDashoffset=C*(1-g.pct);
+  $('gRingText').textContent=Math.round(g.pct*100)+'%';
+  $('gRingSvg').setAttribute('aria-label',`${Math.round(g.pct*100)}% saved`);
+  $('gAmt').textContent=money(g.saved);
+  $('gLeft').textContent=g.pct>=1?'Goal reached':`${money(round2(g.target-g.saved))} to go`;
+  $('gHint').textContent=goalHint(g,c.t);
+  const list=state.savings.filter(e=>e.goalId===g.id).reverse();
+  $('gList').innerHTML=list.length?list.map(e=>`<div class="row"><span class="grow">${e.amount>0?'Added':'Taken out'}<small>${fmt(parse(e.date),{day:'numeric',month:'short',year:'numeric'})}</small></span><span class="amt" style="font-weight:650">${e.amount>0?'+':'−'}${money(Math.abs(e.amount))}</span><button class="del" data-act="delSave" data-id="${esc(e.id)}" aria-label="Delete this entry">×</button></div>`).join(''):'<div class="empty">Nothing saved toward this goal yet.</div>';
+}
 const isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
 const isStandalone=()=>window.matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
 let installEvent=null,offlineReady=false;
@@ -605,12 +657,16 @@ function renderMore(){
   const on=notifyOn()&&canNotify&&Notification.permission==='granted';
   $('mNotifyVal').textContent=!canNotify?'Unavailable':on?'On':(typeof Notification!=='undefined'&&Notification.permission==='denied')?'Blocked':'Off';
   $('mNotifyNote').textContent=on?'Alerts on payment day. Android checks about twice a day, so open the app if one is late.':'Get a notification when a payment is due.';
+  const gOn=goalNotifyOn()&&canNotify&&Notification.permission==='granted';
+  const gVal=!canNotify?'Unavailable':gOn?'On':(typeof Notification!=='undefined'&&Notification.permission==='denied')?'Blocked':'Off';
+  $('mGoalVal').textContent=gVal;$('gNotifyVal').textContent=gVal;
+  $('gNotifyNote').textContent=gOn?'You get a short check-in each morning. Android may deliver it a little late.':'A short daily check-in on your goals.';
   $('mStyle').textContent=getPref(STYLE_KEY,'classic')==='bold'?'Bold':'Classic';
   $('mTheme').textContent={auto:'Auto',light:'Light',dark:'Dark'}[getPref(THEME_KEY,'auto')]||'Auto';
   $('mInstall').textContent=msg;$('installBtn').hidden=!btn;
 }
 
-function renderAll(){const c=compute();renderHome(c);renderDays(c);renderPay(c);renderExp(c);renderSave(c);renderMore();syncReminders(c);if(sheetDate)renderSheet()}
+function renderAll(){const c=compute();renderHome(c);renderDays(c);renderPay(c);renderExp(c);renderGoals(c);renderGoal(c);renderMore();syncReminders(c);if(sheetDate)renderSheet()}
 
 /* ---------- Sheet ---------- */
 let sheetDate=null,lastFocus=null;
@@ -635,21 +691,28 @@ function setStatus(k,status){
   if(status)state.attendance[k]=status;else delete state.attendance[k];
   const ok=persist();renderAll();return ok;
 }
-function parseAmount(){
-  const raw=$('sInput').value.trim().replace(',','.');
-  if(!/^\d+(\.\d{1,2})?$/.test(raw)||Number(raw)<=0)return null;
-  return round2(Number(raw));
-}
-function saveEntry(sign){
-  const err=$('sErr');err.textContent='';
-  const a=parseAmount();
-  if(a===null){err.textContent='Enter an amount above 0, like 12 or 7.50.';$('sInput').focus();return}
-  const total=compute().saved;
-  if(sign<0&&a>total){err.textContent=`You only have ${money(total)} saved.`;return}
-  state.savings.push({id:uid(),date:key(new Date()),amount:sign*a,note:''});
-  $('sInput').value='';
-  if(persist()){toast(sign>0?`Added ${money(a)} to savings`:`Took out ${money(a)}`)}
+function addGoal(){
+  const err=$('gnErr');err.textContent='';
+  const name=$('gnName').value.trim().replace(/\s+/g,' ').slice(0,40),raw=$('gnTarget').value.trim().replace(',','.'),date=$('gnDate').value;
+  if(!name){err.textContent='Enter a name for your goal.';$('gnName').focus();return}
+  if(!/^\d+(\.\d{1,2})?$/.test(raw)||Number(raw)<=0){err.textContent='Enter the amount needed, like 150 or 49.99.';$('gnTarget').focus();return}
+  if(date&&(!DATE_RE.test(date)||date<key(todayDate()))){err.textContent='Pick a date that is today or later, or leave it empty.';return}
+  state.goals.push({id:uid(),name,target:round2(Number(raw)),deadline:date||'',created:key(todayDate())});
+  $('gnName').value='';$('gnTarget').value='';$('gnDate').value='';
+  if(persist())toast(`Goal added: ${name}`);
   renderAll();
+}
+function goalMoney(sign){
+  const err=$('gErr');err.textContent='';
+  const raw=$('gInput').value.trim().replace(',','.');
+  if(!/^\d+(\.\d{1,2})?$/.test(raw)||Number(raw)<=0){err.textContent='Enter an amount above 0, like 12 or 7.50.';$('gInput').focus();return}
+  const a=round2(Number(raw)),g=compute().goals.find(x=>x.id===curGoal);if(!g)return;
+  if(sign<0&&a>g.saved){err.textContent=`This goal only has ${money(g.saved)}.`;return}
+  state.savings.push({id:uid(),date:key(new Date()),amount:sign*a,note:'',goalId:curGoal});
+  $('gInput').value='';
+  const ok=persist();renderAll();
+  const after=compute().goals.find(x=>x.id===curGoal);
+  if(ok)toast(sign>0?(after&&after.pct>=1?'Goal reached. Well done!':`Added ${money(a)}`):`Took out ${money(a)}`);
 }
 function addExpense(){
   const err=$('eErr');err.textContent='';
@@ -686,12 +749,15 @@ document.addEventListener('click',e=>{
     case 'unpay':delete state.payments[el.dataset.id];if(persist())toast('Payment set back to unpaid');renderAll();break;
     case 'expAdd':addExpense();break;
     case 'delExp':state.expenses=state.expenses.filter(x=>x.id!==el.dataset.id);if(persist())toast('Expense deleted');renderAll();break;
-    case 'saveAdd':saveEntry(1);break;
-    case 'saveTake':saveEntry(-1);break;
+    case 'goalAdd':addGoal();break;
+    case 'gAdd':goalMoney(1);break;
+    case 'gTake':goalMoney(-1);break;
+    case 'goalDelete':{const g=state.goals.find(x=>x.id===curGoal);if(g&&confirm(`Delete "${g.name}" and its savings history?`)){state.goals=state.goals.filter(x=>x.id!==g.id);state.savings=state.savings.filter(e=>e.goalId!==g.id);if(persist())toast('Goal deleted');location.hash='#/goals';renderAll()}break}
     case 'delSave':state.savings=state.savings.filter(x=>x.id!==el.dataset.id);if(persist())toast('Entry deleted');renderAll();break;
     case 'style':setPref(STYLE_KEY,getPref(STYLE_KEY,'classic')==='bold'?'classic':'bold');applyAppearance();renderMore();toast('Style changed');break;
     case 'theme':{const o=['auto','light','dark'],n=o[(o.indexOf(getPref(THEME_KEY,'auto'))+1)%3];setPref(THEME_KEY,n);applyAppearance();renderMore();toast('Mode: '+n);break}
-    case 'notify':toggleNotify();break;
+    case 'notify':toggleNotify('pay');break;
+    case 'goalnotify':toggleNotify('goal');break;
     case 'ics':download(buildICS(),'earnings-payment-dates.ics','text/calendar');toast('Open the file to add the dates to your calendar');break;
     case 'backup':download(JSON.stringify(state,null,2),`earnings-backup-${stamp()}.json`,'application/json');toast('Backup downloaded');break;
     case 'csv':{
@@ -707,7 +773,9 @@ document.addEventListener('click',e=>{
 });
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape'&&sheetDate)closeSheet();
-  if(e.key==='Enter'&&e.target.id==='sInput'){e.preventDefault();saveEntry(1)}
+  if(e.key==='Enter'&&e.target.id==='gInput'){e.preventDefault();goalMoney(1)}
+  if(e.key==='Enter'&&e.target.id==='gnName'){e.preventDefault();$('gnTarget').focus()}
+  if(e.key==='Enter'&&e.target.id==='gnTarget'){e.preventDefault();addGoal()}
   if(e.key==='Enter'&&e.target.id==='eName'){e.preventDefault();$('eAmount').focus()}
   if(e.key==='Enter'&&e.target.id==='eAmount'){e.preventDefault();addExpense()}
   if(e.key==='Tab'&&sheetDate){ // keep focus inside the sheet
@@ -717,7 +785,8 @@ document.addEventListener('keydown',e=>{
     else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus()}
   }
 });
-$('sInput').addEventListener('input',()=>{$('sErr').textContent=''});
+$('gInput').addEventListener('input',()=>{$('gErr').textContent=''});
+['gnName','gnTarget','gnDate'].forEach(i=>$(i).addEventListener('input',()=>{$('gnErr').textContent=''}));
 ['eName','eAmount','eDate'].forEach(i=>$(i).addEventListener('input',()=>{$('eErr').textContent=''}));
 $('eDate').value=key(todayDate());
 $('restoreFile').addEventListener('change',async e=>{
@@ -725,7 +794,7 @@ $('restoreFile').addEventListener('change',async e=>{
   try{
     const data=normalize(JSON.parse(await f.text()));
     const n=Object.keys(data.attendance).length;
-    if(!n&&!data.savings.length&&!data.expenses.length&&!Object.keys(data.payments).length){toast('That file has no records');return}
+    if(!n&&!data.savings.length&&!data.expenses.length&&!data.goals.length&&!Object.keys(data.payments).length){toast('That file has no records');return}
     if(confirm(`Replace your current records with this backup (${n} recorded days)?`)){state=data;if(persist())toast('Backup restored');renderAll()}
   }catch(_){toast('That file is not a valid backup')}
 });
@@ -757,9 +826,12 @@ const idb=(mode,fn)=>new Promise((res,rej)=>{
 const kvGet=k=>idb('readonly',s=>s.get(k)).catch(()=>undefined);
 const kvSet=(k,v)=>idb('readwrite',s=>s.put(v,k)).catch(()=>{});
 const NOTIFY_KEY='gcc-earnings-notify';
+const GNOTIFY_KEY='gcc-earnings-goalnotify';
+const goalNotifyOn=()=>{try{return localStorage.getItem(GNOTIFY_KEY)==='1'}catch(e){return false}};
 const notifyOn=()=>{try{return localStorage.getItem(NOTIFY_KEY)==='1'}catch(e){return false}};
 const canNotify='Notification' in window&&'serviceWorker' in navigator;
 function syncReminders(c){
+  kvSet('goals',c.goals.map(g=>({name:g.name,target:g.target,saved:g.saved,deadline:g.deadline})));
   kvSet('weeks',c.weeks.map(w=>({id:w.id,amount:w.amount,paid:w.paid,from:key(w.p[0]),to:key(w.p[w.p.length-1])})));
 }
 async function notifyDue(){
@@ -775,20 +847,40 @@ async function notifyDue(){
     if(due.length)await kvSet('notified',done);
   }catch(e){}
 }
-async function toggleNotify(){
+async function notifyGoals(){
+  if(!canNotify||!goalNotifyOn()||Notification.permission!=='granted'||new Date().getHours()<8)return;
+  try{
+    const t=todayDate(),tk=key(t);
+    if((await kvGet('goalsNotified'))===tk)return;
+    const open=compute().goals.filter(g=>g.pct<1);if(!open.length)return;
+    const g=open[Math.floor((t.getTime()-t.getTimezoneOffset()*60000)/864e5)%open.length];
+    const reg=await navigator.serviceWorker.ready;
+    await reg.showNotification('Goal check-in',{body:`${g.name}: ${money(g.saved)} of ${money(g.target)} (${Math.round(g.pct*100)}%). ${goalHint(g,t)}`,
+      tag:'goals-daily',icon:'icon-192.png',badge:'icon-192.png',data:{url:'./#/goals'}});
+    await kvSet('goalsNotified',tk);
+  }catch(e){}
+}
+async function ensurePeriodic(){
+  try{
+    const reg=await navigator.serviceWorker.ready;if(!reg.periodicSync)return;
+    if(notifyOn()||goalNotifyOn())await reg.periodicSync.register('payment-check',{minInterval:12*60*60*1000});
+    else await reg.periodicSync.unregister('payment-check');
+  }catch(e){}
+}
+async function toggleNotify(kind){
+  const goal=kind==='goal',K=goal?GNOTIFY_KEY:NOTIFY_KEY,flag=goal?'goalsEnabled':'enabled',label=goal?'Daily goal reminders':'Payment alerts';
   if(!canNotify){toast('This browser does not support alerts');return}
-  if(notifyOn()){
-    try{localStorage.setItem(NOTIFY_KEY,'0')}catch(e){}
-    kvSet('enabled',false);
-    try{const reg=await navigator.serviceWorker.ready;if(reg.periodicSync)await reg.periodicSync.unregister('payment-check')}catch(e){}
-    toast('Payment alerts off');renderMore();return;
+  if(goal?goalNotifyOn():notifyOn()){
+    try{localStorage.setItem(K,'0')}catch(e){}
+    await kvSet(flag,false);await ensurePeriodic();
+    toast(label+' off');renderMore();return;
   }
   const perm=Notification.permission==='granted'?'granted':await Notification.requestPermission();
   if(perm!=='granted'){toast('Allow notifications for Earnings in phone settings');renderMore();return}
-  try{localStorage.setItem(NOTIFY_KEY,'1')}catch(e){}
-  await kvSet('enabled',true);syncReminders(compute());
-  try{const reg=await navigator.serviceWorker.ready;if(reg.periodicSync)await reg.periodicSync.register('payment-check',{minInterval:12*60*60*1000})}catch(e){}
-  toast('Payment alerts on');renderMore();notifyDue();
+  try{localStorage.setItem(K,'1')}catch(e){}
+  await kvSet(flag,true);syncReminders(compute());await ensurePeriodic();
+  toast(label+' on');renderMore();
+  if(goal)notifyGoals();else notifyDue();
 }
 function buildICS(){
   const c=compute(),z=n=>String(n).padStart(2,'0'),now=new Date();
@@ -813,18 +905,21 @@ if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostnam
 
 /* ---------- Router ---------- */
 function route(){
-  const name=(location.hash.replace(/^#\/?/,'')||'home');
-  const r=ROUTES[name]?name:'home';
+  const parts=location.hash.replace(/^#\/?/,'').split('/'),raw=parts[0]||'home',name=raw==='save'?'goals':raw;
+  if(name==='goal'){curGoal=parts[1]||'';if(!state.goals.some(g=>g.id===curGoal)){location.replace('#/goals');return}}
+  const r=(ROUTES[name]||name==='goal')?name:'home',navKey=r==='goal'?'goals':r;
   document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id==='page-'+r));
-  document.querySelectorAll('nav a').forEach(a=>{if(a.dataset.route===r)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')});
-  document.title=(r==='home'?'Earnings':ROUTES[r]+' · Earnings');
+  document.querySelectorAll('nav a').forEach(a=>{if(a.dataset.route===navKey)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')});
+  const gname=r==='goal'?(state.goals.find(g=>g.id===curGoal)||{}).name:'';
+  document.title=r==='home'?'Earnings':(r==='goal'?gname:ROUTES[r])+' · Earnings';
+  if(r==='goal')renderGoal(compute());
   window.scrollTo(0,0);
   if(sheetDate)closeSheet();
 }
 window.addEventListener('hashchange',()=>{route();const h=document.querySelector('.page.active h1');if(h)h.focus({preventScroll:true})});
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){renderAll();notifyDue()}});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){renderAll();notifyDue();notifyGoals()}});
 
-applyAppearance();renderAll();route();notifyDue();
+applyAppearance();renderAll();route();notifyDue();notifyGoals();
 (function(){
   const sp=$('splash');if(!sp)return;
   sp.addEventListener('click',()=>sp.classList.add('skip'));
